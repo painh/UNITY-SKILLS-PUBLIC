@@ -300,14 +300,22 @@ namespace ClaudeAgent
             EditorGUILayout.Space(10);
 
             // Log display
+            EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Logs:", EditorStyles.boldLabel);
+            if (GUILayout.Button("Copy All", GUILayout.Width(70)))
+            {
+                EditorGUIUtility.systemCopyBuffer = string.Join("\n", logs);
+            }
+            EditorGUILayout.EndHorizontal();
 
             logScrollPosition = EditorGUILayout.BeginScrollView(logScrollPosition,
                 GUILayout.ExpandHeight(true));
 
+            // 선택 가능한 텍스트로 표시
             foreach (var log in logs)
             {
-                EditorGUILayout.LabelField(log, EditorStyles.wordWrappedLabel);
+                EditorGUILayout.SelectableLabel(log, EditorStyles.wordWrappedLabel,
+                    GUILayout.Height(EditorGUIUtility.singleLineHeight * Mathf.Max(1, Mathf.CeilToInt(log.Length / 50f))));
             }
 
             EditorGUILayout.EndScrollView();
