@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using RoslynCSharp.Compiler;
 using UnityEngine;
 
 namespace RoslynCSharp
