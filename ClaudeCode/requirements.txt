@@ -2,7 +2,10 @@
 # Install: pip install -r requirements.txt
 
 websockets>=12.0
-pywin32>=306
 
-# Note: This script is Windows-only
-# pywin32 is used for window management (activating Unity window)
+# Windows only (optional on macOS/Linux)
+pywin32>=306; sys_platform == "win32"
+
+# Note: This script supports Windows and macOS
+# Windows: pywin32 is used for window management
+# macOS: Uses AppleScript via osascript (no extra dependencies)

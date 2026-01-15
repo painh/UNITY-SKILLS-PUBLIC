@@ -5,9 +5,11 @@ WebSocketを使用した同期通信（タイムアウト10秒）
 
 コマンド実行前にUnityをアクティブ化し、実行後に元のウィンドウに戻ります。
 
-対応OS: Windows のみ
+対応OS: Windows, macOS
 必要なパッケージ:
-  pip install websockets pywin32
+  pip install websockets
+  Windows: pip install pywin32
+  macOS: (標準ライブラリのみ)
 """
 
 import asyncio
@@ -16,44 +18,152 @@ import json
 import sys
 import time
 import platform
-
-# Windowsのみ対応
-if platform.system() != "Windows":
-    print(f"✗ Error: This script only supports Windows")
-    print(f"  Current OS: {platform.system()}")
-    sys.exit(1)
-
-import win32gui
-import win32con
-import win32api
-import ctypes
+import subprocess
+from abc import ABC, abstractmethod
 
 # サーバー設定
 SERVER_URI = "ws://127.0.0.1:8766/"
 TIMEOUT_SECONDS = 10
 MAX_BATCH_COMMANDS = 20
 
+# 現在のOS
+CURRENT_OS = platform.system()
 
-class WindowManager:
-    """Windowsウィンドウ管理クラス"""
+
+class WindowManagerBase(ABC):
+    """ウィンドウ管理の基底クラス"""
 
     def __init__(self):
+        self.unity_title = None
+
+    @abstractmethod
+    def find_unity_window(self, exact_title: str = None) -> bool:
+        """Unityウィンドウを検索"""
+        pass
+
+    @abstractmethod
+    def save_current_window(self):
+        """現在のフォアグラウンドウィンドウを保存"""
+        pass
+
+    @abstractmethod
+    def activate_unity(self) -> bool:
+        """Unityをアクティブ化"""
+        pass
+
+    @abstractmethod
+    def restore_original(self) -> bool:
+        """元のウィンドウに戻す"""
+        pass
+
+
+class MacWindowManager(WindowManagerBase):
+    """macOS用ウィンドウ管理クラス"""
+
+    def __init__(self):
+        super().__init__()
+        self.original_app = None
+        self.unity_found = False
+
+    def _run_applescript(self, script: str) -> str:
+        """AppleScriptを実行"""
+        try:
+            result = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.stdout.strip()
+        except Exception as e:
+            print(f"⚠ AppleScript error: {e}")
+            return ""
+
+    def find_unity_window(self, exact_title: str = None) -> bool:
+        """Unityウィンドウを検索"""
+        # Unityが実行中かチェック
+        script = '''
+        tell application "System Events"
+            set unityProcs to (name of every process whose name contains "Unity")
+            if (count of unityProcs) > 0 then
+                return "found"
+            else
+                return "not_found"
+            end if
+        end tell
+        '''
+        result = self._run_applescript(script)
+        self.unity_found = (result == "found")
+
+        if self.unity_found:
+            self.unity_title = exact_title or "Unity"
+
+        return self.unity_found
+
+    def save_current_window(self):
+        """現在のアクティブアプリを保存"""
+        script = '''
+        tell application "System Events"
+            set frontApp to name of first application process whose frontmost is true
+            return frontApp
+        end tell
+        '''
+        self.original_app = self._run_applescript(script)
+
+    def activate_unity(self) -> bool:
+        """Unityをアクティブ化"""
+        if not self.unity_found:
+            return False
+
+        script = '''
+        tell application "Unity" to activate
+        '''
+        self._run_applescript(script)
+        return True
+
+    def restore_original(self) -> bool:
+        """元のアプリに戻す"""
+        if not self.original_app:
+            return False
+
+        script = f'''
+        tell application "{self.original_app}" to activate
+        '''
+        self._run_applescript(script)
+        return True
+
+
+class WindowsWindowManager(WindowManagerBase):
+    """Windows用ウィンドウ管理クラス"""
+
+    def __init__(self):
+        super().__init__()
         self.unity_hwnd = None
         self.original_hwnd = None
-        self.unity_title = None
+
+        # Windows用モジュールをインポート
+        import win32gui
+        import win32con
+        import win32api
+        import ctypes
+
+        self.win32gui = win32gui
+        self.win32con = win32con
+        self.win32api = win32api
+        self.ctypes = ctypes
 
     def find_window_by_title(self, title_substring: str) -> list:
         """タイトルに部分文字列を含むウィンドウを検索"""
         result = []
 
         def callback(hwnd, _):
-            if win32gui.IsWindowVisible(hwnd):
-                title = win32gui.GetWindowText(hwnd)
+            if self.win32gui.IsWindowVisible(hwnd):
+                title = self.win32gui.GetWindowText(hwnd)
                 if title_substring in title:
                     result.append((hwnd, title))
             return True
 
-        win32gui.EnumWindows(callback, None)
+        self.win32gui.EnumWindows(callback, None)
         return result
 
     def find_unity_window(self, exact_title: str = None) -> bool:
@@ -79,40 +189,40 @@ class WindowManager:
 
     def save_current_window(self):
         """現在のフォアグラウンドウィンドウを保存"""
-        self.original_hwnd = win32gui.GetForegroundWindow()
+        self.original_hwnd = self.win32gui.GetForegroundWindow()
 
     def force_foreground_window(self, hwnd: int) -> bool:
         """
         ウィンドウを強制的にフォアグラウンドに
         バックグラウンドプロセスからでも動作する回避策を使用
         """
-        if not hwnd or not win32gui.IsWindow(hwnd):
+        if not hwnd or not self.win32gui.IsWindow(hwnd):
             return False
 
         try:
             # 最小化されている場合は復元
-            if win32gui.IsIconic(hwnd):
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            if self.win32gui.IsIconic(hwnd):
+                self.win32gui.ShowWindow(hwnd, self.win32con.SW_RESTORE)
                 time.sleep(0.1)
 
             # 方法1: Altキーを送信してフォアグラウンドロックを解除
-            win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)  # Alt押下
-            win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)  # Alt解放
+            self.win32api.keybd_event(self.win32con.VK_MENU, 0, 0, 0)  # Alt押下
+            self.win32api.keybd_event(self.win32con.VK_MENU, 0, self.win32con.KEYEVENTF_KEYUP, 0)  # Alt解放
 
             # 方法2: スレッドをアタッチしてフォアグラウンドに設定
-            foreground_hwnd = win32gui.GetForegroundWindow()
+            foreground_hwnd = self.win32gui.GetForegroundWindow()
             if foreground_hwnd:
-                foreground_thread = ctypes.windll.user32.GetWindowThreadProcessId(foreground_hwnd, None)
-                current_thread = ctypes.windll.kernel32.GetCurrentThreadId()
+                foreground_thread = self.ctypes.windll.user32.GetWindowThreadProcessId(foreground_hwnd, None)
+                current_thread = self.ctypes.windll.kernel32.GetCurrentThreadId()
 
                 if foreground_thread != current_thread:
-                    ctypes.windll.user32.AttachThreadInput(current_thread, foreground_thread, True)
-                    win32gui.SetForegroundWindow(hwnd)
-                    ctypes.windll.user32.AttachThreadInput(current_thread, foreground_thread, False)
+                    self.ctypes.windll.user32.AttachThreadInput(current_thread, foreground_thread, True)
+                    self.win32gui.SetForegroundWindow(hwnd)
+                    self.ctypes.windll.user32.AttachThreadInput(current_thread, foreground_thread, False)
                 else:
-                    win32gui.SetForegroundWindow(hwnd)
+                    self.win32gui.SetForegroundWindow(hwnd)
             else:
-                win32gui.SetForegroundWindow(hwnd)
+                self.win32gui.SetForegroundWindow(hwnd)
 
             return True
         except Exception as e:
@@ -132,6 +242,38 @@ class WindowManager:
         return self.force_foreground_window(self.original_hwnd)
 
 
+class DummyWindowManager(WindowManagerBase):
+    """ウィンドウ管理をスキップするダミークラス（Linux等）"""
+
+    def find_unity_window(self, exact_title: str = None) -> bool:
+        print("⚠ Window management not supported on this OS, skipping...")
+        return False
+
+    def save_current_window(self):
+        pass
+
+    def activate_unity(self) -> bool:
+        return False
+
+    def restore_original(self) -> bool:
+        return False
+
+
+def create_window_manager() -> WindowManagerBase:
+    """OSに応じたWindowManagerを作成"""
+    if CURRENT_OS == "Windows":
+        try:
+            return WindowsWindowManager()
+        except ImportError:
+            print("⚠ pywin32 not installed, window management disabled")
+            print("  Install with: pip install pywin32")
+            return DummyWindowManager()
+    elif CURRENT_OS == "Darwin":  # macOS
+        return MacWindowManager()
+    else:
+        return DummyWindowManager()
+
+
 async def get_unity_window_title() -> str:
     """Unity Command Serverからウィンドウタイトルを取得"""
     try:
@@ -147,7 +289,7 @@ async def get_unity_window_title() -> str:
     return None
 
 
-async def send_command(command: str, window_manager: WindowManager) -> dict:
+async def send_command(command: str, window_manager: WindowManagerBase) -> dict:
     """
     Unity Command ServerにJSONコマンドを送信し、結果を受け取る
 
@@ -169,7 +311,7 @@ async def send_command(command: str, window_manager: WindowManager) -> dict:
         window_manager.find_unity_window()
 
     # Unityをアクティブ化
-    if window_manager.unity_hwnd:
+    if window_manager.unity_title:
         print(f"🪟 Activating Unity: {window_manager.unity_title}")
         window_manager.activate_unity()
         time.sleep(0.5)  # ウィンドウ切り替え待機
@@ -199,10 +341,9 @@ async def send_command(command: str, window_manager: WindowManager) -> dict:
             return response
     finally:
         # 元のウィンドウに戻す
-        if window_manager.original_hwnd:
-            time.sleep(0.3)  # 処理完了待機
-            print(f"🪟 Restoring original window")
-            window_manager.restore_original()
+        time.sleep(0.3)  # 処理完了待機
+        print(f"🪟 Restoring original window")
+        window_manager.restore_original()
 
 
 def validate_batch_command(parsed_json: dict) -> tuple:
@@ -279,6 +420,8 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python send_message.py <json_command>")
         print()
+        print(f"Current OS: {CURRENT_OS}")
+        print()
         print("Examples:")
         print('  # Single command')
         print('  python send_message.py \'{"operation":"get_scene_hierarchy","params":{}}\'')
@@ -310,8 +453,8 @@ def main():
         print(f"✗ Batch validation error: {error_msg}")
         sys.exit(1)
 
-    # ウィンドウマネージャー
-    window_manager = WindowManager()
+    # ウィンドウマネージャー（OS別）
+    window_manager = create_window_manager()
 
     try:
         response = asyncio.run(send_command(command, window_manager))
