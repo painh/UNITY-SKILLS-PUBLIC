@@ -24,8 +24,19 @@
    - `websocket-sharp.dll` - WebSocket 통신
    - `Roslyn/` - Microsoft Roslyn 컴파일러 (런타임 코드 실행용)
    - `RoslynCSharp/` - 오픈소스 RoslynCSharp 호환 API
-3. Package Manager에서 `com.unity.nuget.newtonsoft-json` 설치
+3. Package Manager에서 필수 패키지 설치:
+   - `com.unity.nuget.newtonsoft-json` - JSON 직렬화
+   - `com.unity.probuilder` - ProBuilder 메쉬 생성 기능 (계단, 아치, 파이프 등)
 4. **Tools → ClaudeAgent → Unity Command Server** 실행
+
+### 필수 Unity 패키지
+
+| 패키지 | 패키지 ID | 용도 |
+|--------|----------|------|
+| Newtonsoft Json | `com.unity.nuget.newtonsoft-json` | JSON 직렬화/역직렬화 |
+| ProBuilder | `com.unity.probuilder` | 계단, 아치, 파이프, 문 등 복잡한 메쉬 생성 |
+
+**설치 방법**: Window → Package Manager → Unity Registry에서 검색 후 Install
 
 ### Runtime 코드 실행 (선택)
 `execute_code`, `attach_script` 등 런타임 C# 코드 실행 기능을 사용하려면:
