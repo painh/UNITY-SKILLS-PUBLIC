@@ -97,7 +97,7 @@ Several operations support `position_space`, `rotation_space`, and `scale_space`
 
 Result messages show which space was used: `Created sphere: MySphere (position: world, scale: local)`
 
-## Supported Operations (60 total)
+## Supported Operations (64 total)
 
 > **Looking up operation details**: Use `Grep "### operation_name" File.md -A 25` to retrieve only the specific operation section instead of reading the entire file. This reduces token consumption.
 
@@ -228,6 +228,14 @@ Result messages show which space was used: `Created sphere: MySphere (position: 
 | Operation | Description |
 |-----------|-------------|
 | `create_probuilder_shape` | [Create procedural 3D mesh (stair, door, curved_stair, arch, pipe, cone, prism)](ProBuilder.md#create_probuilder_shape) |
+
+### Runtime Operations (Play Mode Only)
+| Operation | Description |
+|-----------|-------------|
+| `execute_code` | [Execute arbitrary C# code at runtime](Runtime.md#execute_code) |
+| `attach_script` | [Compile and attach MonoBehaviour to GameObject](Runtime.md#attach_script) |
+| `execute_on_object` | [Execute code with GameObject parameter](Runtime.md#execute_on_object) |
+| `play_animation` | [Play animation state on Animator](Runtime.md#play_animation) |
 
 ### Visual Guide Modeling Operations
 | Operation | Description |
