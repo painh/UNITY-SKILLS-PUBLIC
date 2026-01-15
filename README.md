@@ -20,9 +20,18 @@
 
 ### Unity 측
 1. `Assets/ClaudeAgent/Editor/` 폴더를 Unity 프로젝트에 복사
-2. `websocket-sharp.dll`을 `Assets/Plugins/`에 배치
+2. `Assets/Plugins/` 폴더 전체를 Unity 프로젝트에 복사:
+   - `websocket-sharp.dll` - WebSocket 통신
+   - `Roslyn/` - Microsoft Roslyn 컴파일러 (런타임 코드 실행용)
+   - `RoslynCSharp/` - 오픈소스 RoslynCSharp 호환 API
 3. Package Manager에서 `com.unity.nuget.newtonsoft-json` 설치
 4. **Tools → ClaudeAgent → Unity Command Server** 실행
+
+### Runtime 코드 실행 (선택)
+`execute_code`, `attach_script` 등 런타임 C# 코드 실행 기능을 사용하려면:
+- `Assets/Plugins/Roslyn/` 및 `Assets/Plugins/RoslynCSharp/` 필수
+- Play 모드에서만 동작
+- 테스트: **Window → RoslynCSharp Test**
 
 ### Python 측
 ```bash
@@ -37,7 +46,7 @@ python send_message.py '{"operation":"get_scene_hierarchy","params":{}}'
 
 ## 지원 기능
 
-GameObject, Transform, Component, Material, Scene, Prefab, Light, Camera, UI, Animator, Terrain, ProBuilder, Screenshot 등 60개 이상의 Unity Editor 조작 지원.
+GameObject, Transform, Component, Material, Scene, Prefab, Light, Camera, UI, Animator, Terrain, ProBuilder, Screenshot, **Runtime 코드 실행** 등 64개의 Unity Editor 조작 지원.
 
 자세한 내용은 [원본 저장소](https://github.com/manahiyo831/UNITY-SKILLS-PUBLIC)를 참고하세요.
 
