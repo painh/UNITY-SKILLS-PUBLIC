@@ -912,11 +912,13 @@ namespace ClaudeAgent
             public string new_name;            // For SetName: new name
             public bool world_position_stays;  // For SetParent: maintain world position
             public string target_path;         // For LookAt: path of target to look at
+            public string target_component;    // For set_object_reference: specific component type on target
 
             // Phase 7A parameters (Component operations)
             public string component;           // Component type name (e.g., "Rigidbody", "BoxCollider")
             public string property;            // Property name (e.g., "mass", "isKinematic")
             public string value;               // Property value (JSON string)
+            public int index = -1;             // For list operations: index position (-1 = not specified)
 
             // Phase 7B parameters (Material/Renderer operations)
             public string material_path;       // Material path (e.g., "Assets/Materials/MyMaterial.mat")

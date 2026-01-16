@@ -22,6 +22,8 @@ namespace ClaudeAgent
             RegisterCommand("set_component_property", SetComponentProperty);
             RegisterCommand("get_components", GetComponents);
             RegisterCommand("set_object_reference", SetObjectReference);
+            RegisterCommand("add_to_list", AddToList);
+            RegisterCommand("remove_from_list", RemoveFromList);
         }
 
         /// <summary>
@@ -724,15 +726,35 @@ namespace ClaudeAgent
                 }
                 else if (typeof(Component).IsAssignableFrom(memberType))
                 {
+                    // If target_component is specified, use that type instead of memberType
+                    Type targetComponentType = memberType;
+                    if (!string.IsNullOrEmpty(p.target_component))
+                    {
+                        var (resolvedType, resolveError) = ResolveComponentTypeWithError(p.target_component);
+                        if (resolvedType == null)
+                        {
+                            UnityEngine.Debug.LogWarning($"[CommandExecutor] {resolveError}");
+                            return (false, resolveError);
+                        }
+                        // Verify the resolved type is compatible with the member type
+                        if (!memberType.IsAssignableFrom(resolvedType))
+                        {
+                            string error = $"Target component type '{p.target_component}' is not compatible with property type '{memberType.Name}'";
+                            UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
+                            return (false, error);
+                        }
+                        targetComponentType = resolvedType;
+                    }
+
                     // Reference to specific Component type
-                    referenceValue = targetObj.GetComponent(memberType);
+                    referenceValue = targetObj.GetComponent(targetComponentType);
                     if (referenceValue == null)
                     {
-                        string error = $"Target '{p.target_path}' does not have component '{memberType.Name}'";
+                        string error = $"Target '{p.target_path}' does not have component '{targetComponentType.Name}'";
                         UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
-                    targetTypeName = memberType.Name;
+                    targetTypeName = targetComponentType.Name;
                 }
                 else
                 {
@@ -780,6 +802,346 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error setting object reference: {e.Message}";
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
+                return (false, error);
+            }
+        }
+
+        /// <summary>
+        /// Adds an item to a List/Array property on a component
+        /// Supports: prefab_path (for GameObject lists), target_path (for scene object references), value (for primitives)
+        /// </summary>
+        private (bool, string) AddToList(CommandParams p)
+        {
+            try
+            {
+                if (p == null || string.IsNullOrEmpty(p.path))
+                    return (false, "Missing required parameter: path");
+
+                if (string.IsNullOrEmpty(p.component))
+                    return (false, "Missing required parameter: component");
+
+                if (string.IsNullOrEmpty(p.property))
+                    return (false, "Missing required parameter: property");
+
+                var (obj, findError) = FindGameObjectByPath(p.path);
+                if (obj == null)
+                    return (false, findError ?? $"GameObject not found: {p.path}");
+
+                var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
+                if (componentType == null)
+                    return (false, typeError);
+
+                Component component = obj.GetComponent(componentType);
+                if (component == null)
+                    return (false, $"{p.component} not found on {obj.name}");
+
+                // Get property or field
+                var bindingFlags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                var propertyInfo = componentType.GetProperty(p.property, bindingFlags);
+                var fieldInfo = componentType.GetField(p.property, bindingFlags);
+
+                if (propertyInfo == null && fieldInfo == null)
+                    return (false, $"Property or field '{p.property}' not found on {p.component}");
+
+                Type memberType = propertyInfo?.PropertyType ?? fieldInfo.FieldType;
+                object listObj = propertyInfo != null ? propertyInfo.GetValue(component) : fieldInfo.GetValue(component);
+
+                // Determine the element type
+                Type elementType = null;
+                if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    elementType = memberType.GetGenericArguments()[0];
+                }
+                else if (memberType.IsArray)
+                {
+                    elementType = memberType.GetElementType();
+                }
+                else
+                {
+                    return (false, $"Property '{p.property}' is not a List or Array type (type: {memberType.Name})");
+                }
+
+                // Determine the item to add
+                object itemToAdd = null;
+                string itemDescription = "";
+
+                if (elementType == typeof(GameObject))
+                {
+                    // For GameObject lists, support both prefab_path and target_path
+                    if (!string.IsNullOrEmpty(p.prefab_path))
+                    {
+                        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(p.prefab_path);
+                        if (prefab == null)
+                            return (false, $"Prefab not found at: {p.prefab_path}");
+                        itemToAdd = prefab;
+                        itemDescription = p.prefab_path;
+                    }
+                    else if (!string.IsNullOrEmpty(p.target_path))
+                    {
+                        var (targetObj, targetError) = FindGameObjectByPath(p.target_path);
+                        if (targetObj == null)
+                            return (false, targetError ?? $"Target GameObject not found: {p.target_path}");
+                        itemToAdd = targetObj;
+                        itemDescription = p.target_path;
+                    }
+                    else
+                    {
+                        return (false, "Missing required parameter: prefab_path or target_path (for GameObject list)");
+                    }
+                }
+                else if (typeof(UnityEngine.Object).IsAssignableFrom(elementType))
+                {
+                    // For other UnityEngine.Object types (Prefab assets, etc.)
+                    if (!string.IsNullOrEmpty(p.prefab_path) || !string.IsNullOrEmpty(p.asset_path))
+                    {
+                        string assetPath = !string.IsNullOrEmpty(p.prefab_path) ? p.prefab_path : p.asset_path;
+                        var asset = AssetDatabase.LoadAssetAtPath(assetPath, elementType);
+                        if (asset == null)
+                            return (false, $"Asset not found at: {assetPath}");
+                        itemToAdd = asset;
+                        itemDescription = assetPath;
+                    }
+                    else if (!string.IsNullOrEmpty(p.target_path))
+                    {
+                        var (targetObj, targetError) = FindGameObjectByPath(p.target_path);
+                        if (targetObj == null)
+                            return (false, targetError ?? $"Target GameObject not found: {p.target_path}");
+
+                        if (elementType == typeof(Transform))
+                        {
+                            itemToAdd = targetObj.transform;
+                        }
+                        else if (typeof(Component).IsAssignableFrom(elementType))
+                        {
+                            itemToAdd = targetObj.GetComponent(elementType);
+                            if (itemToAdd == null)
+                                return (false, $"Target '{p.target_path}' does not have component '{elementType.Name}'");
+                        }
+                        else
+                        {
+                            itemToAdd = targetObj;
+                        }
+                        itemDescription = p.target_path;
+                    }
+                    else
+                    {
+                        return (false, $"Missing required parameter: prefab_path, asset_path, or target_path (for {elementType.Name} list)");
+                    }
+                }
+                else
+                {
+                    // For primitive types
+                    if (string.IsNullOrEmpty(p.value))
+                        return (false, $"Missing required parameter: value (for {elementType.Name} list)");
+                    itemToAdd = ParsePropertyValue(p.value, elementType);
+                    itemDescription = p.value;
+                }
+
+                Undo.RecordObject(component, "Add to List");
+
+                // Add to list
+                if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    // Create list if null
+                    if (listObj == null)
+                    {
+                        listObj = Activator.CreateInstance(memberType);
+                        if (propertyInfo != null && propertyInfo.CanWrite)
+                            propertyInfo.SetValue(component, listObj);
+                        else if (fieldInfo != null)
+                            fieldInfo.SetValue(component, listObj);
+                    }
+
+                    var addMethod = memberType.GetMethod("Add");
+                    addMethod.Invoke(listObj, new[] { itemToAdd });
+                }
+                else if (memberType.IsArray)
+                {
+                    // For arrays, create a new array with the item added
+                    Array oldArray = (Array)listObj ?? Array.CreateInstance(elementType, 0);
+                    Array newArray = Array.CreateInstance(elementType, oldArray.Length + 1);
+                    Array.Copy(oldArray, newArray, oldArray.Length);
+                    newArray.SetValue(itemToAdd, oldArray.Length);
+
+                    if (propertyInfo != null && propertyInfo.CanWrite)
+                        propertyInfo.SetValue(component, newArray);
+                    else if (fieldInfo != null)
+                        fieldInfo.SetValue(component, newArray);
+                }
+
+                EditorUtility.SetDirty(component);
+                EditorUtility.SetDirty(obj);
+
+                string result = $"Added '{itemDescription}' to {obj.name}.{p.component}.{p.property}";
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+                return (true, result);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error adding to list: {e.Message}";
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
+                return (false, error);
+            }
+        }
+
+        /// <summary>
+        /// Removes an item from a List/Array property on a component
+        /// Supports: index (by position), prefab_path/target_path (by reference), value (by value)
+        /// </summary>
+        private (bool, string) RemoveFromList(CommandParams p)
+        {
+            try
+            {
+                if (p == null || string.IsNullOrEmpty(p.path))
+                    return (false, "Missing required parameter: path");
+
+                if (string.IsNullOrEmpty(p.component))
+                    return (false, "Missing required parameter: component");
+
+                if (string.IsNullOrEmpty(p.property))
+                    return (false, "Missing required parameter: property");
+
+                var (obj, findError) = FindGameObjectByPath(p.path);
+                if (obj == null)
+                    return (false, findError ?? $"GameObject not found: {p.path}");
+
+                var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
+                if (componentType == null)
+                    return (false, typeError);
+
+                Component component = obj.GetComponent(componentType);
+                if (component == null)
+                    return (false, $"{p.component} not found on {obj.name}");
+
+                // Get property or field
+                var bindingFlags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                var propertyInfo = componentType.GetProperty(p.property, bindingFlags);
+                var fieldInfo = componentType.GetField(p.property, bindingFlags);
+
+                if (propertyInfo == null && fieldInfo == null)
+                    return (false, $"Property or field '{p.property}' not found on {p.component}");
+
+                Type memberType = propertyInfo?.PropertyType ?? fieldInfo.FieldType;
+                object listObj = propertyInfo != null ? propertyInfo.GetValue(component) : fieldInfo.GetValue(component);
+
+                if (listObj == null)
+                    return (false, $"List '{p.property}' is null");
+
+                // Determine the element type
+                Type elementType = null;
+                int listCount = 0;
+                if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    elementType = memberType.GetGenericArguments()[0];
+                    listCount = (int)memberType.GetProperty("Count").GetValue(listObj);
+                }
+                else if (memberType.IsArray)
+                {
+                    elementType = memberType.GetElementType();
+                    listCount = ((Array)listObj).Length;
+                }
+                else
+                {
+                    return (false, $"Property '{p.property}' is not a List or Array type (type: {memberType.Name})");
+                }
+
+                if (listCount == 0)
+                    return (false, $"List '{p.property}' is empty");
+
+                Undo.RecordObject(component, "Remove from List");
+
+                // Determine removal method: by index or by reference
+                int removeIndex = -1;
+                string removedDescription = "";
+
+                if (p.index >= 0)
+                {
+                    // Remove by index
+                    if (p.index >= listCount)
+                        return (false, $"Index {p.index} out of range (list has {listCount} items)");
+                    removeIndex = p.index;
+                    removedDescription = $"index {p.index}";
+                }
+                else
+                {
+                    // Remove by reference - find the item first
+                    object itemToFind = null;
+
+                    if (!string.IsNullOrEmpty(p.prefab_path))
+                    {
+                        itemToFind = AssetDatabase.LoadAssetAtPath(p.prefab_path, elementType);
+                        removedDescription = p.prefab_path;
+                    }
+                    else if (!string.IsNullOrEmpty(p.target_path))
+                    {
+                        var (targetObj, _) = FindGameObjectByPath(p.target_path);
+                        if (targetObj != null)
+                        {
+                            if (elementType == typeof(GameObject))
+                                itemToFind = targetObj;
+                            else if (elementType == typeof(Transform))
+                                itemToFind = targetObj.transform;
+                            else if (typeof(Component).IsAssignableFrom(elementType))
+                                itemToFind = targetObj.GetComponent(elementType);
+                        }
+                        removedDescription = p.target_path;
+                    }
+                    else if (!string.IsNullOrEmpty(p.value))
+                    {
+                        itemToFind = ParsePropertyValue(p.value, elementType);
+                        removedDescription = p.value;
+                    }
+
+                    if (itemToFind == null)
+                        return (false, "Could not find item to remove. Provide index, prefab_path, target_path, or value.");
+
+                    // Find the index of the item
+                    if (memberType.IsGenericType)
+                    {
+                        var indexOfMethod = memberType.GetMethod("IndexOf");
+                        removeIndex = (int)indexOfMethod.Invoke(listObj, new[] { itemToFind });
+                    }
+                    else if (memberType.IsArray)
+                    {
+                        removeIndex = Array.IndexOf((Array)listObj, itemToFind);
+                    }
+
+                    if (removeIndex < 0)
+                        return (false, $"Item '{removedDescription}' not found in list");
+                }
+
+                // Remove the item
+                if (memberType.IsGenericType && memberType.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    var removeAtMethod = memberType.GetMethod("RemoveAt");
+                    removeAtMethod.Invoke(listObj, new object[] { removeIndex });
+                }
+                else if (memberType.IsArray)
+                {
+                    Array oldArray = (Array)listObj;
+                    Array newArray = Array.CreateInstance(elementType, oldArray.Length - 1);
+                    if (removeIndex > 0)
+                        Array.Copy(oldArray, 0, newArray, 0, removeIndex);
+                    if (removeIndex < oldArray.Length - 1)
+                        Array.Copy(oldArray, removeIndex + 1, newArray, removeIndex, oldArray.Length - removeIndex - 1);
+
+                    if (propertyInfo != null && propertyInfo.CanWrite)
+                        propertyInfo.SetValue(component, newArray);
+                    else if (fieldInfo != null)
+                        fieldInfo.SetValue(component, newArray);
+                }
+
+                EditorUtility.SetDirty(component);
+                EditorUtility.SetDirty(obj);
+
+                string result = $"Removed '{removedDescription}' from {obj.name}.{p.component}.{p.property}";
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+                return (true, result);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error removing from list: {e.Message}";
                 UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
