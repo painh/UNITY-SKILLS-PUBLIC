@@ -28,6 +28,7 @@ namespace ClaudeAgent
         public static string LatestReleaseUrl { get; private set; } = null;
         public static string LatestZipUrl { get; private set; } = null;
         public static bool IsChecking { get; private set; } = false;
+        public static string LastCheckResult { get; private set; } = null;
         public static bool HasUpdate => !string.IsNullOrEmpty(LatestVersion) && CompareVersions(LatestVersion, CurrentVersion) > 0;
 
         private static UnityWebRequest currentRequest;
@@ -87,10 +88,9 @@ namespace ClaudeAgent
                 // Handle 404 (no releases yet)
                 if (currentRequest.responseCode == 404)
                 {
-                    string msg = "No releases found on GitHub yet";
-                    if (!silent) Debug.Log($"[CommandServer] {msg}");
                     LatestVersion = null;
-                    checkCallback?.Invoke(true, msg);
+                    LastCheckResult = "No releases yet";
+                    checkCallback?.Invoke(true, LastCheckResult);
                     return;
                 }
 
@@ -134,15 +134,13 @@ namespace ClaudeAgent
 
                 if (HasUpdate)
                 {
-                    string msg = $"New version available: {LatestVersion} (current: {CurrentVersion})";
-                    if (!silent) Debug.Log($"[CommandServer] {msg}");
-                    checkCallback?.Invoke(true, msg);
+                    LastCheckResult = $"v{LatestVersion} available";
+                    checkCallback?.Invoke(true, LastCheckResult);
                 }
                 else
                 {
-                    string msg = $"You have the latest version ({CurrentVersion})";
-                    if (!silent) Debug.Log($"[CommandServer] {msg}");
-                    checkCallback?.Invoke(true, msg);
+                    LastCheckResult = "Latest";
+                    checkCallback?.Invoke(true, LastCheckResult);
                 }
             }
             catch (Exception e)
@@ -745,13 +743,16 @@ namespace ClaudeAgent
 
             // Version display
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Version: {VersionChecker.CurrentVersion}", GUILayout.Width(120));
+            EditorGUILayout.LabelField($"Version: {VersionChecker.CurrentVersion}", GUILayout.Width(100));
 
-            if (VersionChecker.HasUpdate)
+            if (!string.IsNullOrEmpty(VersionChecker.LastCheckResult))
             {
-                var updateStyle = new GUIStyle(EditorStyles.boldLabel);
-                updateStyle.normal.textColor = new Color(1f, 0.5f, 0f); // Orange
-                EditorGUILayout.LabelField($"→ {VersionChecker.LatestVersion} available!", updateStyle);
+                var statusStyle = new GUIStyle(EditorStyles.miniLabel);
+                if (VersionChecker.HasUpdate)
+                    statusStyle.normal.textColor = new Color(1f, 0.5f, 0f); // Orange
+                else
+                    statusStyle.normal.textColor = new Color(0.4f, 0.7f, 0.4f); // Green
+                EditorGUILayout.LabelField($"({VersionChecker.LastCheckResult})", statusStyle);
             }
 
             GUILayout.FlexibleSpace();
@@ -761,20 +762,9 @@ namespace ClaudeAgent
             {
                 VersionChecker.CheckForUpdates((success, message) =>
                 {
-                    if (success)
+                    if (success && VersionChecker.HasUpdate)
                     {
-                        if (VersionChecker.HasUpdate)
-                        {
-                            VersionChecker.ShowUpdateDialogIfAvailable();
-                        }
-                        else
-                        {
-                            EditorUtility.DisplayDialog("버전 확인", "최신 버전입니다.", "확인");
-                        }
-                    }
-                    else
-                    {
-                        EditorUtility.DisplayDialog("버전 확인 실패", message, "확인");
+                        VersionChecker.ShowUpdateDialogIfAvailable();
                     }
                     Repaint();
                 });
