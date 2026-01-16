@@ -582,6 +582,8 @@ namespace ClaudeAgent
             // Initialize port input with current custom port
             int customPort = CommandServerAutoStart.CustomPort;
             portInputText = customPort > 0 ? customPort.ToString() : "";
+            // Initialize file logging setting
+            CommandExecutor.InitializeFileLogging();
         }
 
         private void OnDisable()
@@ -780,6 +782,73 @@ namespace ClaudeAgent
             }
 
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(5);
+
+            // Debug file logging section
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+
+            bool newEnableLogging = EditorGUILayout.ToggleLeft("Enable Debug File Logging", CommandExecutor.EnableFileLogging, GUILayout.Width(180));
+            if (newEnableLogging != CommandExecutor.EnableFileLogging)
+            {
+                CommandExecutor.EnableFileLogging = newEnableLogging;
+            }
+
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button("Clear", GUILayout.Width(50)))
+            {
+                CommandExecutor.ClearDebugLogFile();
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            // Log file path with edit options
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Log File:", GUILayout.Width(55));
+
+            string logPath = CommandExecutor.GetDebugLogPath();
+
+            // Clickable path label
+            var linkStyle = new GUIStyle(EditorStyles.miniLabel);
+            linkStyle.normal.textColor = new Color(0.3f, 0.5f, 1f);
+            linkStyle.hover.textColor = new Color(0.5f, 0.7f, 1f);
+            linkStyle.stretchWidth = true;
+
+            if (GUILayout.Button(logPath, linkStyle, GUILayout.ExpandWidth(true)))
+            {
+                CommandExecutor.OpenDebugLogFile();
+            }
+            EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
+
+            // Browse button
+            if (GUILayout.Button("...", GUILayout.Width(25)))
+            {
+                string directory = System.IO.Path.GetDirectoryName(logPath);
+                string filename = System.IO.Path.GetFileName(logPath);
+
+                string newPath = EditorUtility.SaveFilePanel(
+                    "Select Debug Log File Location",
+                    directory,
+                    filename,
+                    "log"
+                );
+
+                if (!string.IsNullOrEmpty(newPath))
+                {
+                    CommandExecutor.DebugLogPath = newPath;
+                }
+            }
+
+            // Reset to default button
+            if (GUILayout.Button("Reset", GUILayout.Width(45)))
+            {
+                CommandExecutor.DebugLogPath = CommandExecutor.GetDefaultDebugLogPath();
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(10);
 

@@ -4,6 +4,8 @@ using UnityEditor.SceneManagement;
 using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 
 namespace ClaudeAgent
 {
@@ -32,14 +34,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.component))
                 {
                     string error = "Missing required parameter: component";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -47,7 +49,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -55,7 +57,7 @@ namespace ClaudeAgent
                 var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
                 if (componentType == null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {typeError}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -63,7 +65,7 @@ namespace ClaudeAgent
                 if (obj.GetComponent(componentType) != null)
                 {
                     string error = $"{p.component} already exists on {obj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -74,13 +76,13 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(newComponent);
 
                 string result = $"Added {p.component} to {obj.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error adding component: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -95,14 +97,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.component))
                 {
                     string error = "Missing required parameter: component";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -110,7 +112,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -118,7 +120,7 @@ namespace ClaudeAgent
                 var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
                 if (componentType == null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {typeError}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -127,7 +129,7 @@ namespace ClaudeAgent
                 if (component == null)
                 {
                     string error = $"{p.component} not found on {obj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -135,16 +137,162 @@ namespace ClaudeAgent
                 Undo.DestroyObjectImmediate(component);
 
                 string result = $"Removed {p.component} from {obj.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error removing component: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
+
+        // Debug log file path
+        private static readonly string DefaultDebugLogPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            "ClaudeAgent_Debug.log"
+        );
+
+        // Flag to enable/disable file logging
+        private static bool _enableFileLogging = false;
+        private static string _debugLogPath = null;
+        private const string PrefKeyEnableFileLogging = "ClaudeAgent_EnableFileLogging";
+        private const string PrefKeyDebugLogPath = "ClaudeAgent_DebugLogPath";
+
+        /// <summary>
+        /// Gets or sets whether file logging is enabled
+        /// </summary>
+        public static bool EnableFileLogging
+        {
+            get => _enableFileLogging;
+            set
+            {
+                _enableFileLogging = value;
+                EditorPrefs.SetBool(PrefKeyEnableFileLogging, value);
+                if (value)
+                {
+                    DebugLogToFile("=== File logging enabled ===");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the debug log file path
+        /// </summary>
+        public static string DebugLogPath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_debugLogPath))
+                {
+                    _debugLogPath = EditorPrefs.GetString(PrefKeyDebugLogPath, DefaultDebugLogPath);
+                }
+                return _debugLogPath;
+            }
+            set
+            {
+                _debugLogPath = value;
+                EditorPrefs.SetString(PrefKeyDebugLogPath, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the debug log file path
+        /// </summary>
+        public static string GetDebugLogPath() => DebugLogPath;
+
+        /// <summary>
+        /// Gets the default debug log file path
+        /// </summary>
+        public static string GetDefaultDebugLogPath() => DefaultDebugLogPath;
+
+        /// <summary>
+        /// Initialize file logging setting from EditorPrefs
+        /// </summary>
+        public static void InitializeFileLogging()
+        {
+            _enableFileLogging = EditorPrefs.GetBool(PrefKeyEnableFileLogging, false);
+            _debugLogPath = EditorPrefs.GetString(PrefKeyDebugLogPath, DefaultDebugLogPath);
+        }
+
+        /// <summary>
+        /// Opens the debug log file in the default text editor
+        /// </summary>
+        public static void OpenDebugLogFile()
+        {
+            if (File.Exists(DebugLogPath))
+            {
+                EditorUtility.OpenWithDefaultApp(DebugLogPath);
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("File Not Found",
+                    $"Debug log file does not exist yet.\n\nPath: {DebugLogPath}",
+                    "OK");
+            }
+        }
+
+        /// <summary>
+        /// Clears the debug log file
+        /// </summary>
+        public static void ClearDebugLogFile()
+        {
+            try
+            {
+                if (File.Exists(DebugLogPath))
+                {
+                    File.Delete(DebugLogPath);
+                    UnityEngine.Debug.Log("[CommandExecutor] Debug log file cleared");
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError($"[CommandExecutor] Failed to clear debug log: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Writes debug log to file (survives Unity crash)
+        /// </summary>
+        private static void DebugLogToFile(string message)
+        {
+            if (!_enableFileLogging) return;
+
+            try
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+                string logLine = $"[{timestamp}] {message}\n";
+                File.AppendAllText(DebugLogPath, logLine);
+            }
+            catch { }
+        }
+
+        // Properties that can cause Unity to hang when accessed via reflection
+        private static readonly HashSet<string> HeavyPropertyBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // TerrainCollider - accessing terrainData can serialize huge terrain data
+            "terrainData",
+            // TerrainCollider - GeometryHolder causes Unity to hang
+            "GeometryHolder",
+            // MeshCollider - sharedMesh can be large
+            "sharedMesh",
+            // Renderer materials (can trigger asset loading)
+            "materials",
+            "sharedMaterials",
+            // Mesh related
+            "mesh",
+            // Animation related (can be heavy)
+            "runtimeAnimatorController",
+        };
+
+        // Component types that need special handling
+        private static readonly HashSet<string> HeavyComponentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "TerrainCollider",
+            "Terrain",
+            "MeshCollider",
+        };
 
         /// <summary>
         /// Gets component information
@@ -156,14 +304,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.component))
                 {
                     string error = "Missing required parameter: component";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -171,7 +319,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -179,7 +327,7 @@ namespace ClaudeAgent
                 var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
                 if (componentType == null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {typeError}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -188,9 +336,13 @@ namespace ClaudeAgent
                 if (component == null)
                 {
                     string error = $"{p.component} not found on {obj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
+
+                // Check if this is a heavy component type
+                bool isHeavyComponent = HeavyComponentTypes.Contains(componentType.Name);
+                DebugLogToFile($"GetComponent START: {componentType.Name} on {obj.name} (isHeavy: {isHeavyComponent})");
 
                 // Get component info (using Reflection)
                 var sb = new StringBuilder();
@@ -200,20 +352,57 @@ namespace ClaudeAgent
                 // Get properties
                 var properties = componentType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
                 sb.AppendLine("Properties:");
+                int skippedCount = 0;
                 foreach (var prop in properties)
                 {
                     if (prop.CanRead)
                     {
+                        // Check if this property should be skipped
+                        if (HeavyPropertyBlacklist.Contains(prop.Name))
+                        {
+                            sb.AppendLine($"  {prop.Name}: <skipped - heavy property>");
+                            skippedCount++;
+                            DebugLogToFile($"  SKIP (blacklist): {prop.Name}");
+                            continue;
+                        }
+
+                        // For heavy components, be extra cautious with certain property types
+                        if (isHeavyComponent)
+                        {
+                            var propType = prop.PropertyType;
+                            if (propType == typeof(TerrainData) ||
+                                propType == typeof(Mesh) ||
+                                propType.Name.Contains("Data") ||
+                                propType.IsArray)
+                            {
+                                sb.AppendLine($"  {prop.Name}: <skipped - potentially heavy type: {propType.Name}>");
+                                skippedCount++;
+                                DebugLogToFile($"  SKIP (heavy type): {prop.Name} ({propType.Name})");
+                                continue;
+                            }
+                        }
+
                         try
                         {
+                            DebugLogToFile($"  READ START: {prop.Name} ({prop.PropertyType.Name})");
+                            var sw = Stopwatch.StartNew();
                             object value = prop.GetValue(component);
+                            sw.Stop();
+                            DebugLogToFile($"  READ DONE: {prop.Name} = {value} ({sw.ElapsedMilliseconds}ms)");
                             sb.AppendLine($"  {prop.Name}: {value}");
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            sb.AppendLine($"  {prop.Name}: <unable to read>");
+                            sb.AppendLine($"  {prop.Name}: <unable to read: {ex.Message}>");
+                            DebugLogToFile($"  READ FAIL: {prop.Name} - {ex.Message}");
                         }
                     }
+                }
+
+                if (skippedCount > 0)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"Note: {skippedCount} heavy properties were skipped to prevent hanging.");
                 }
 
                 sb.AppendLine();
@@ -225,6 +414,13 @@ namespace ClaudeAgent
                     sb.AppendLine("Fields:");
                     foreach (var field in fields)
                     {
+                        // Check if this field should be skipped
+                        if (HeavyPropertyBlacklist.Contains(field.Name))
+                        {
+                            sb.AppendLine($"  {field.Name}: <skipped - heavy field>");
+                            continue;
+                        }
+
                         try
                         {
                             object value = field.GetValue(component);
@@ -238,13 +434,14 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Retrieved component info for {p.component}");
+                DebugLogToFile($"GetComponent DONE: {p.component}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error getting component: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                DebugLogToFile($"GetComponent ERROR: {e.Message}\n{e.StackTrace}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -259,21 +456,21 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.component))
                 {
                     string error = "Missing required parameter: component";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.property))
                 {
                     string error = "Missing required parameter: property";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -281,7 +478,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -289,7 +486,7 @@ namespace ClaudeAgent
                 var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
                 if (componentType == null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {typeError}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -298,7 +495,7 @@ namespace ClaudeAgent
                 if (component == null)
                 {
                     string error = $"{p.component} not found on {obj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -310,7 +507,7 @@ namespace ClaudeAgent
                 if (propertyInfo == null && fieldInfo == null)
                 {
                     string error = $"Property or field '{p.property}' not found on {p.component}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -327,7 +524,7 @@ namespace ClaudeAgent
                     if (asset == null)
                     {
                         string error = $"Asset not found at path: {p.value}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     value = asset;
@@ -348,20 +545,20 @@ namespace ClaudeAgent
                 else
                 {
                     string error = $"Property '{p.property}' is read-only";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 EditorUtility.SetDirty(obj);
 
                 string result = $"Set {obj.name}.{p.component}.{p.property} = {p.value}";
-                Debug.Log($"[CommandExecutor] {result}");
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting component property: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -376,7 +573,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -384,7 +581,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -405,13 +602,13 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Retrieved {components.Length} components");
+                UnityEngine.Debug.Log($"[CommandExecutor] Retrieved {components.Length} components");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error getting components: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -426,28 +623,28 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.component))
                 {
                     string error = "Missing required parameter: component";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.property))
                 {
                     string error = "Missing required parameter: property";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.target_path))
                 {
                     string error = "Missing required parameter: target_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -456,14 +653,14 @@ namespace ClaudeAgent
                 if (sourceObj == null)
                 {
                     string error = sourceFindError ?? $"Source GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 var (componentType, typeError) = ResolveComponentTypeWithError(p.component);
                 if (componentType == null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {typeError}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -471,7 +668,7 @@ namespace ClaudeAgent
                 if (component == null)
                 {
                     string error = $"{p.component} not found on {sourceObj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -483,7 +680,7 @@ namespace ClaudeAgent
                 if (propertyInfo == null && fieldInfo == null)
                 {
                     string error = $"Property or field '{p.property}' not found on {p.component}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -494,7 +691,7 @@ namespace ClaudeAgent
                 if (targetObj == null)
                 {
                     string error = targetFindError ?? $"Target GameObject not found: {p.target_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -521,7 +718,7 @@ namespace ClaudeAgent
                     if (referenceValue == null)
                     {
                         string error = $"Target '{p.target_path}' does not have component '{memberType.Name}'";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     targetTypeName = memberType.Name;
@@ -529,7 +726,7 @@ namespace ClaudeAgent
                 else
                 {
                     string error = $"Property '{p.property}' is not a GameObject or Component reference type (type: {memberType.Name})";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -547,7 +744,7 @@ namespace ClaudeAgent
                 else
                 {
                     string error = $"Property '{p.property}' is read-only";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -555,13 +752,13 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(sourceObj);
 
                 string result = $"Set {sourceObj.name}.{p.component}.{p.property} = {targetObj.name} ({targetTypeName})";
-                Debug.Log($"[CommandExecutor] {result}");
+                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting object reference: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -859,7 +1056,7 @@ namespace ClaudeAgent
                         else
                         {
                             string errorMsg = $"Asset not found at path: {valueString}";
-                            Debug.LogWarning($"[CommandExecutor] {errorMsg}");
+                            UnityEngine.Debug.LogWarning($"[CommandExecutor] {errorMsg}");
                             throw new System.IO.FileNotFoundException(errorMsg);
                         }
                     }
@@ -889,7 +1086,7 @@ namespace ClaudeAgent
             }
             catch (Exception e)
             {
-                Debug.LogError($"[CommandExecutor] Error parsing value '{valueString}' to type {targetType.Name}: {e.Message}");
+                UnityEngine.Debug.LogError($"[CommandExecutor] Error parsing value '{valueString}' to type {targetType.Name}: {e.Message}");
                 throw; // Rethrown to caller's catch block as error
             }
         }
