@@ -84,6 +84,16 @@ namespace ClaudeAgent
 
             try
             {
+                // Handle 404 (no releases yet)
+                if (currentRequest.responseCode == 404)
+                {
+                    string msg = "No releases found on GitHub yet";
+                    if (!silent) Debug.Log($"[CommandServer] {msg}");
+                    LatestVersion = null;
+                    checkCallback?.Invoke(true, msg);
+                    return;
+                }
+
                 if (currentRequest.result != UnityWebRequest.Result.Success)
                 {
                     string error = $"Failed to check updates: {currentRequest.error}";
