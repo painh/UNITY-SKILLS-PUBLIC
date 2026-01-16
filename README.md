@@ -21,15 +21,15 @@
 ## 설치 (macOS)
 
 ### Unity 측
-1. `Assets/ClaudeAgent/Editor/` 폴더를 Unity 프로젝트에 복사
-2. `Assets/Plugins/` 폴더 전체를 Unity 프로젝트에 복사:
+1. `Assets/Plugins/` 폴더 전체를 Unity 프로젝트에 복사:
+   - `ClaudeAgent/` - Command Server 및 Editor 기능
    - `websocket-sharp.dll` - WebSocket 통신
    - `Roslyn/` - Microsoft Roslyn 컴파일러 (런타임 코드 실행용)
    - `RoslynCSharp/` - 오픈소스 RoslynCSharp 호환 API
-3. Package Manager에서 필수 패키지 설치:
+2. Package Manager에서 필수 패키지 설치:
    - `com.unity.nuget.newtonsoft-json` - JSON 직렬화
    - `com.unity.probuilder` - ProBuilder 메쉬 생성 기능 (계단, 아치, 파이프 등)
-4. **Tools → ClaudeAgent → Unity Command Server** 실행
+3. **Tools → Unity Command Server** 실행
 
 ### 필수 Unity 패키지
 
@@ -85,7 +85,7 @@ python send_message.py --port 8767 '{"operation":"get_scene_hierarchy","params":
 `CommandExecutor`는 **partial class**로 구현되어 있어 확장이 용이합니다:
 
 ```csharp
-// Assets/ClaudeAgent/Editor/CommandExecutor.MyFeature.cs
+// Assets/Plugins/ClaudeAgent/Editor/CommandExecutor.MyFeature.cs
 namespace ClaudeAgent
 {
     public partial class CommandExecutor
