@@ -37,7 +37,7 @@ namespace ClaudeAgent
                 // Add essential assembly references
                 AddDefaultAssemblyReferences(_runtimeDomain);
 
-                Debug.Log("[CommandExecutor] Created runtime script domain: ClaudeRuntimeDomain");
+                ConsoleLog("[CommandExecutor] Created runtime script domain: ClaudeRuntimeDomain");
             }
             return _runtimeDomain;
         }

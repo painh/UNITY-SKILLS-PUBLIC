@@ -83,7 +83,7 @@ namespace ClaudeAgent
                 sb.AppendLine($"  Is Scene Dirty: {scene.isDirty}");
 
                 string result = sb.ToString();
-                Debug.Log("[CommandExecutor] Retrieved editor state");
+                ConsoleLog("[CommandExecutor] Retrieved editor state");
                 return (true, result);
             }
             catch (Exception e)
@@ -142,7 +142,7 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log("[CommandExecutor] Retrieved selection");
+                ConsoleLog("[CommandExecutor] Retrieved selection");
                 return (true, result);
             }
             catch (Exception e)
@@ -250,7 +250,7 @@ namespace ClaudeAgent
                             return (false, error);
                         }
                         EditorApplication.EnterPlaymode();
-                        Debug.Log("[CommandExecutor] Entered play mode");
+                        ConsoleLog("[CommandExecutor] Entered play mode");
                         return (true, "Entered play mode");
 
                     case "stop":
@@ -261,7 +261,7 @@ namespace ClaudeAgent
                             return (true, warning);
                         }
                         EditorApplication.ExitPlaymode();
-                        Debug.Log("[CommandExecutor] Exited play mode");
+                        ConsoleLog("[CommandExecutor] Exited play mode");
                         return (true, "Exited play mode");
 
                     case "pause":
@@ -278,7 +278,7 @@ namespace ClaudeAgent
                             return (true, warning);
                         }
                         EditorApplication.isPaused = true;
-                        Debug.Log("[CommandExecutor] Paused play mode");
+                        ConsoleLog("[CommandExecutor] Paused play mode");
                         return (true, "Paused play mode");
 
                     case "resume":
@@ -295,7 +295,7 @@ namespace ClaudeAgent
                             return (true, warning);
                         }
                         EditorApplication.isPaused = false;
-                        Debug.Log("[CommandExecutor] Resumed play mode");
+                        ConsoleLog("[CommandExecutor] Resumed play mode");
                         return (true, "Resumed play mode");
 
                     default:
@@ -329,7 +329,7 @@ namespace ClaudeAgent
                 : "Play Mode (Running)";
             sb.AppendLine($"  State: {state}");
 
-            Debug.Log("[CommandExecutor] Retrieved play mode state");
+            ConsoleLog("[CommandExecutor] Retrieved play mode state");
             return (true, sb.ToString());
         }
     }

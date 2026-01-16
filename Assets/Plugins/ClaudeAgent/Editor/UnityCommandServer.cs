@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.5";
+        public const string CurrentVersion = "0.0.6";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -81,7 +81,7 @@ namespace ClaudeAgent
             EditorApplication.update += CheckTimeout;
 
             if (!silent)
-                Debug.Log("[CommandServer] Checking for updates...");
+                if (CommandExecutor.EnableConsoleLogging) Debug.Log("[CommandServer] Checking for updates...");
         }
 
         private static double checkStartTime;
@@ -104,7 +104,7 @@ namespace ClaudeAgent
                 currentRequest = null;
 
                 LastCheckResult = "Timeout";
-                Debug.LogWarning("[CommandServer] Update check timed out");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning("[CommandServer] Update check timed out");
                 checkCallback?.Invoke(false, "Update check timed out");
                 checkCallback = null;
             }
@@ -129,7 +129,7 @@ namespace ClaudeAgent
                 if (currentRequest.result != UnityWebRequest.Result.Success)
                 {
                     string error = $"Failed to check updates: {currentRequest.error}";
-                    if (!silent) Debug.LogWarning($"[CommandServer] {error}");
+                    if (!silent) if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning($"[CommandServer] {error}");
                     checkCallback?.Invoke(false, error);
                     return;
                 }
@@ -178,7 +178,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error parsing update info: {e.Message}";
-                if (!silent) Debug.LogError($"[CommandServer] {error}");
+                if (!silent) if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] {error}");
                 checkCallback?.Invoke(false, error);
             }
             finally
@@ -214,7 +214,7 @@ namespace ClaudeAgent
                     break;
                 case 1: // Skip this version
                     EditorPrefs.SetString(PrefKeySkipVersion, LatestVersion);
-                    Debug.Log($"[CommandServer] Skipping version {LatestVersion}");
+                    if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Skipping version {LatestVersion}");
                     break;
                 case 2: // Later
                     break;
@@ -313,7 +313,7 @@ namespace ClaudeAgent
                 // Try specific port
                 if (!IsPortAvailable(port))
                 {
-                    Debug.LogError($"[CommandServer] Port {port} is already in use");
+                    if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] Port {port} is already in use");
                     // Fallback to auto
                     CustomPort = 0;
                     StartServer();
@@ -377,11 +377,11 @@ namespace ClaudeAgent
                     System.IO.Directory.CreateDirectory(dir);
 
                 System.IO.File.WriteAllText(PortFilePath, port.ToString());
-                Debug.Log($"[CommandServer] Port file saved: {PortFilePath}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Port file saved: {PortFilePath}");
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[CommandServer] Failed to save port file: {e.Message}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning($"[CommandServer] Failed to save port file: {e.Message}");
             }
         }
 
@@ -395,12 +395,12 @@ namespace ClaudeAgent
                 if (System.IO.File.Exists(PortFilePath))
                 {
                     System.IO.File.Delete(PortFilePath);
-                    Debug.Log($"[CommandServer] Port file deleted: {PortFilePath}");
+                    if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Port file deleted: {PortFilePath}");
                 }
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[CommandServer] Failed to delete port file: {e.Message}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning($"[CommandServer] Failed to delete port file: {e.Message}");
             }
         }
 
@@ -422,7 +422,7 @@ namespace ClaudeAgent
                     }
                     else
                     {
-                        Debug.LogWarning($"[CommandServer] Custom port {customPort} unavailable, finding alternative...");
+                        if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning($"[CommandServer] Custom port {customPort} unavailable, finding alternative...");
                         port = FindAvailablePort();
                     }
                 }
@@ -434,7 +434,7 @@ namespace ClaudeAgent
 
                 if (port < 0)
                 {
-                    Debug.LogError($"[CommandServer] No available port found (tried {BasePort}-{BasePort + MaxPortAttempts - 1})");
+                    if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] No available port found (tried {BasePort}-{BasePort + MaxPortAttempts - 1})");
                     return;
                 }
 
@@ -448,11 +448,11 @@ namespace ClaudeAgent
                 // Save port to file for external tools
                 SavePortFile(port);
 
-                Debug.Log($"[CommandServer] Server started on ws://127.0.0.1:{port}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Server started on ws://127.0.0.1:{port}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[CommandServer] Failed to start: {e.Message}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] Failed to start: {e.Message}");
             }
         }
 
@@ -469,11 +469,11 @@ namespace ClaudeAgent
                 // Delete port file
                 DeletePortFile();
 
-                Debug.Log("[CommandServer] Server stopped");
+                if (CommandExecutor.EnableConsoleLogging) Debug.Log("[CommandServer] Server stopped");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[CommandServer] Failed to stop: {e.Message}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] Failed to stop: {e.Message}");
             }
         }
 
@@ -538,7 +538,7 @@ namespace ClaudeAgent
         protected override void OnMessage(MessageEventArgs e)
         {
             string rawMessage = e.Data;
-            Debug.Log($"[CommandServer] Received: {rawMessage}");
+            if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Received: {rawMessage}");
 
             // Capture reference to WebSocket session
             var session = this;
@@ -556,37 +556,37 @@ namespace ClaudeAgent
                             if (session.State == WebSocketState.Open)
                             {
                                 session.Send(responseJson);
-                                Debug.Log($"[CommandServer] Response sent: {responseJson}");
+                                if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Response sent: {responseJson}");
                             }
                             else
                             {
-                                Debug.LogWarning("[CommandServer] Cannot send response: connection not open");
+                                if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning("[CommandServer] Cannot send response: connection not open");
                             }
                         }
                         catch (Exception ex)
                         {
-                            Debug.LogError($"[CommandServer] Error sending response: {ex.Message}");
+                            if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] Error sending response: {ex.Message}");
                         }
                     }
                 });
             }
 
-            Debug.Log($"[CommandServer] Command queued. Queue size: {commandQueue.Count}");
+            if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Command queued. Queue size: {commandQueue.Count}");
         }
 
         protected override void OnOpen()
         {
-            Debug.Log($"[CommandServer] Client connected: {Context.UserEndPoint}");
+            if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Client connected: {Context.UserEndPoint}");
         }
 
         protected override void OnClose(CloseEventArgs e)
         {
-            Debug.Log($"[CommandServer] Client disconnected: {e.Reason}");
+            if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Client disconnected: {e.Reason}");
         }
 
         protected override void OnError(ErrorEventArgs e)
         {
-            Debug.LogError($"[CommandServer] WebSocket error: {e.Message}");
+            if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] WebSocket error: {e.Message}");
         }
     }
 
@@ -648,7 +648,7 @@ namespace ClaudeAgent
                     return;
                 }
 
-                Debug.Log($"[CommandServer] Command JSON: {commandJson}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.Log($"[CommandServer] Command JSON: {commandJson}");
 
                 // Execute command
                 var (success, resultJson) = executor.ExecuteCommand(commandJson);
@@ -676,7 +676,7 @@ namespace ClaudeAgent
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[CommandServer] Error: {ex.Message}\n{ex.StackTrace}");
+                if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] Error: {ex.Message}\n{ex.StackTrace}");
                 response["success"] = false;
                 response["error"] = ex.Message;
             }

@@ -183,6 +183,7 @@ Sets a GameObject or Component reference on a Component's property or field. Use
 - `component` (required): Component type name on the source object
 - `property` (required): Property or field name to set the reference
 - `target_path` (required): Path to the target GameObject to reference
+- `target_component` (optional): Specific component type on target (when multiple components exist)
 
 **Example:**
 ```json
@@ -197,12 +198,120 @@ Sets a GameObject or Component reference on a Component's property or field. Use
 }
 ```
 
+**Example with target_component (for specific component selection):**
+```json
+{
+  "operation": "set_object_reference",
+  "params": {
+    "path": "NetworkManager",
+    "component": "Mirror.NetworkManager",
+    "property": "transport",
+    "target_path": "NetworkManager",
+    "target_component": "kcp2k.KcpTransport"
+  }
+}
+```
+
 **Response Format:**
 Returns a success message with the property path and target object name.
 
 **Note:**
 - Automatically determines the reference type (GameObject, Transform, or Component)
 - If the property expects a specific Component type, it will get that Component from the target GameObject
+- Use `target_component` when multiple compatible components exist on the target
 - Supports both public properties and private fields (with [SerializeField])
 - Uses `Undo.RecordObject()` for Undo support
 - Use `set_component_property` for asset references (like Materials, Textures) with asset paths
+
+### add_to_list
+
+Adds an item to a List or Array property on a Component. Useful for registering prefabs, adding references, etc.
+
+**Parameters:**
+- `path` (required): Object path containing the Component
+- `component` (required): Component type name
+- `property` (required): List/Array property name (e.g., "spawnPrefabs")
+- `prefab_path` (optional): Path to prefab asset to add (for GameObject lists)
+- `asset_path` (optional): Path to any asset to add
+- `target_path` (optional): Path to scene object to add as reference
+- `value` (optional): Value for primitive type lists
+
+**Example (Add prefab to NetworkManager.spawnPrefabs):**
+```json
+{
+  "operation": "add_to_list",
+  "params": {
+    "path": "NetworkManager",
+    "component": "Mirror.NetworkManager",
+    "property": "spawnPrefabs",
+    "prefab_path": "Assets/Prefabs/Player.prefab"
+  }
+}
+```
+
+**Example (Add scene object reference):**
+```json
+{
+  "operation": "add_to_list",
+  "params": {
+    "path": "GameManager",
+    "component": "SpawnManager",
+    "property": "spawnPoints",
+    "target_path": "SpawnPoint1"
+  }
+}
+```
+
+**Response Format:**
+Returns a success message with the added item description.
+
+**Note:**
+- Supports both List<T> and T[] array types
+- Creates list if null
+- Uses `Undo.RecordObject()` for Undo support
+
+### remove_from_list
+
+Removes an item from a List or Array property on a Component.
+
+**Parameters:**
+- `path` (required): Object path containing the Component
+- `component` (required): Component type name
+- `property` (required): List/Array property name
+- `index` (optional): Index of item to remove (0-based)
+- `prefab_path` (optional): Remove by prefab path match
+- `target_path` (optional): Remove by scene object reference match
+- `value` (optional): Remove by value match (for primitives)
+
+**Example (Remove by index):**
+```json
+{
+  "operation": "remove_from_list",
+  "params": {
+    "path": "NetworkManager",
+    "component": "Mirror.NetworkManager",
+    "property": "spawnPrefabs",
+    "index": 0
+  }
+}
+```
+
+**Example (Remove by prefab path):**
+```json
+{
+  "operation": "remove_from_list",
+  "params": {
+    "path": "NetworkManager",
+    "component": "Mirror.NetworkManager",
+    "property": "spawnPrefabs",
+    "prefab_path": "Assets/Prefabs/Player.prefab"
+  }
+}
+```
+
+**Response Format:**
+Returns a success message with the removed item description.
+
+**Note:**
+- Provide either `index` OR one of the match parameters (prefab_path, target_path, value)
+- Uses `Undo.RecordObject()` for Undo support

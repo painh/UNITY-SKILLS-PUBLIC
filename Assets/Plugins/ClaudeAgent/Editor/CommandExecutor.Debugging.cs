@@ -63,7 +63,7 @@ namespace ClaudeAgent
                         sb.AppendLine($"  Error:     {stats[LogType.Error]}");
                         sb.AppendLine($"  Exception: {stats[LogType.Exception]}");
                         sb.AppendLine($"  Assert:    {stats[LogType.Assert]}");
-                        Debug.Log("[CommandExecutor] Retrieved log statistics");
+                        ConsoleLog("[CommandExecutor] Retrieved log statistics");
                         break;
 
                     default:
@@ -98,7 +98,7 @@ namespace ClaudeAgent
             {
                 ConsoleLogManager.ClearLogs();
                 string result = "Console logs cleared successfully";
-                Debug.Log("[CommandExecutor] " + result);
+                ConsoleLog("[CommandExecutor] " + result);
                 return (true, result);
             }
             catch (Exception e)
