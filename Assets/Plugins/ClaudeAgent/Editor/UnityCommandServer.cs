@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.4";
+        public const string CurrentVersion = "0.0.5";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -67,20 +67,52 @@ namespace ClaudeAgent
 
             IsChecking = true;
             checkCallback = callback;
+            checkStartTime = EditorApplication.timeSinceStartup;
 
             string url = string.Format(GitHubApiUrl, GitHubOwner, GitHubRepo);
             currentRequest = UnityWebRequest.Get(url);
             currentRequest.SetRequestHeader("User-Agent", "Unity-Claude-Agent");
+            currentRequest.timeout = 10; // 10 second timeout
 
             var operation = currentRequest.SendWebRequest();
             operation.completed += (op) => OnCheckComplete(silent);
+
+            // Register timeout check
+            EditorApplication.update += CheckTimeout;
 
             if (!silent)
                 Debug.Log("[CommandServer] Checking for updates...");
         }
 
+        private static double checkStartTime;
+        private const double TimeoutSeconds = 15.0;
+
+        private static void CheckTimeout()
+        {
+            if (!IsChecking)
+            {
+                EditorApplication.update -= CheckTimeout;
+                return;
+            }
+
+            if (EditorApplication.timeSinceStartup - checkStartTime > TimeoutSeconds)
+            {
+                EditorApplication.update -= CheckTimeout;
+                IsChecking = false;
+                currentRequest?.Abort();
+                currentRequest?.Dispose();
+                currentRequest = null;
+
+                LastCheckResult = "Timeout";
+                Debug.LogWarning("[CommandServer] Update check timed out");
+                checkCallback?.Invoke(false, "Update check timed out");
+                checkCallback = null;
+            }
+        }
+
         private static void OnCheckComplete(bool silent)
         {
+            EditorApplication.update -= CheckTimeout;
             IsChecking = false;
 
             try
