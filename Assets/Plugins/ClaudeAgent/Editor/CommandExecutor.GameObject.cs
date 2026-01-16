@@ -556,7 +556,7 @@ namespace ClaudeAgent
         }
 
         /// <summary>
-        /// Finds GameObjects
+        /// Finds GameObjects (supports Prefab Mode)
         /// </summary>
         private (bool, string) FindGameObject(CommandParams p)
         {
@@ -564,6 +564,9 @@ namespace ClaudeAgent
             {
                 var sb = new StringBuilder();
                 var foundObjects = new List<GameObject>();
+
+                // Check if in Prefab Mode
+                var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 
                 // If path specified (exact match)
                 if (!string.IsNullOrEmpty(p.path))
@@ -580,26 +583,55 @@ namespace ClaudeAgent
                         return (false, findError);
                     }
                 }
-                // Search by tag
+                // Search by tag (only in scene mode, tags don't work in prefab stage)
                 else if (!string.IsNullOrEmpty(p.tag))
                 {
-                    GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag(p.tag);
-                    foundObjects.AddRange(taggedObjects);
+                    if (prefabStage != null)
+                    {
+                        // Search by tag in prefab hierarchy
+                        FindGameObjectsByTagInHierarchy(prefabStage.prefabContentsRoot.transform, p.tag, foundObjects);
+                    }
+                    else
+                    {
+                        GameObject[] taggedObjects = GameObject.FindGameObjectsWithTag(p.tag);
+                        foundObjects.AddRange(taggedObjects);
+                    }
                 }
                 // Search by name (partial match)
                 else if (!string.IsNullOrEmpty(p.name))
                 {
-                    GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-                    foreach (var obj in allObjects)
+                    if (prefabStage != null)
                     {
-                        if (obj.name.Contains(p.name))
+                        // Search in prefab hierarchy
+                        var root = prefabStage.prefabContentsRoot;
+                        if (root.name.Contains(p.name))
                         {
-                            foundObjects.Add(obj);
+                            foundObjects.Add(root);
+                        }
+                        FindGameObjectsByNameContainsInHierarchy(root.transform, p.name, foundObjects);
+                    }
+                    else
+                    {
+                        GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+                        foreach (var obj in allObjects)
+                        {
+                            if (obj.name.Contains(p.name))
+                            {
+                                foundObjects.Add(obj);
+                            }
                         }
                     }
                 }
 
-                sb.AppendLine($"Found {foundObjects.Count} GameObject(s):");
+                // Build header based on context
+                if (prefabStage != null)
+                {
+                    sb.AppendLine($"Found {foundObjects.Count} GameObject(s) in prefab:");
+                }
+                else
+                {
+                    sb.AppendLine($"Found {foundObjects.Count} GameObject(s):");
+                }
                 sb.AppendLine();
 
                 foreach (var obj in foundObjects)
@@ -621,6 +653,36 @@ namespace ClaudeAgent
                 string error = $"Error finding GameObject: {e.Message}";
                 Debug.LogError($"[CommandExecutor] {error}");
                 return (false, error);
+            }
+        }
+
+        /// <summary>
+        /// Recursively finds GameObjects by name (partial match) in hierarchy
+        /// </summary>
+        private void FindGameObjectsByNameContainsInHierarchy(Transform parent, string name, List<GameObject> results)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name.Contains(name))
+                {
+                    results.Add(child.gameObject);
+                }
+                FindGameObjectsByNameContainsInHierarchy(child, name, results);
+            }
+        }
+
+        /// <summary>
+        /// Recursively finds GameObjects by tag in hierarchy
+        /// </summary>
+        private void FindGameObjectsByTagInHierarchy(Transform parent, string tag, List<GameObject> results)
+        {
+            if (parent.gameObject.CompareTag(tag))
+            {
+                results.Add(parent.gameObject);
+            }
+            foreach (Transform child in parent)
+            {
+                FindGameObjectsByTagInHierarchy(child, tag, results);
             }
         }
 

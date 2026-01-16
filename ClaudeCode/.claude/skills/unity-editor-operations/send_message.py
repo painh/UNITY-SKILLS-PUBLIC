@@ -16,13 +16,15 @@ import asyncio
 import websockets
 import json
 import sys
+import os
 import time
 import platform
 import subprocess
+import argparse
 from abc import ABC, abstractmethod
 
 # サーバー設定
-SERVER_URI = "ws://127.0.0.1:8766/"
+DEFAULT_PORT = 8766
 TIMEOUT_SECONDS = 10
 MAX_BATCH_COMMANDS = 20
 
@@ -274,10 +276,56 @@ def create_window_manager() -> WindowManagerBase:
         return DummyWindowManager()
 
 
-async def get_unity_window_title() -> str:
+def read_port_from_project(project_path: str) -> int:
+    """
+    Read port number from Unity project's Library/ClaudeAgent/port.txt
+
+    Args:
+        project_path: Path to Unity project root
+
+    Returns:
+        Port number or None if not found
+    """
+    port_file = os.path.join(project_path, "Library", "ClaudeAgent", "port.txt")
+    if os.path.exists(port_file):
+        try:
+            with open(port_file, "r") as f:
+                port = int(f.read().strip())
+                return port
+        except (ValueError, IOError) as e:
+            print(f"⚠ Failed to read port file: {e}")
+    return None
+
+
+def get_server_uri(port: int = None, project: str = None) -> str:
+    """
+    Get server URI based on port or project path
+
+    Args:
+        port: Explicit port number
+        project: Unity project path to read port from
+
+    Returns:
+        WebSocket server URI
+    """
+    if port:
+        return f"ws://127.0.0.1:{port}/"
+
+    if project:
+        port = read_port_from_project(project)
+        if port:
+            print(f"📂 Using port {port} from project: {project}")
+            return f"ws://127.0.0.1:{port}/"
+        else:
+            print(f"⚠ Port file not found in project, using default port {DEFAULT_PORT}")
+
+    return f"ws://127.0.0.1:{DEFAULT_PORT}/"
+
+
+async def get_unity_window_title(server_uri: str) -> str:
     """Unity Command Serverからウィンドウタイトルを取得"""
     try:
-        async with websockets.connect(SERVER_URI) as websocket:
+        async with websockets.connect(server_uri) as websocket:
             request = {"message": '{"operation":"get_window_title","params":{}}'}
             await websocket.send(json.dumps(request))
             response_str = await asyncio.wait_for(websocket.recv(), timeout=5)
@@ -289,13 +337,14 @@ async def get_unity_window_title() -> str:
     return None
 
 
-async def send_command(command: str, window_manager: WindowManagerBase) -> dict:
+async def send_command(command: str, window_manager: WindowManagerBase, server_uri: str) -> dict:
     """
     Unity Command ServerにJSONコマンドを送信し、結果を受け取る
 
     Args:
         command: JSONコマンド文字列
         window_manager: ウィンドウ管理オブジェクト
+        server_uri: WebSocket server URI
 
     Returns:
         dict: サーバーからの応答（success, result, error, timestamp）
@@ -304,7 +353,7 @@ async def send_command(command: str, window_manager: WindowManagerBase) -> dict:
     window_manager.save_current_window()
 
     # Unityウィンドウを検索
-    unity_title = await get_unity_window_title()
+    unity_title = await get_unity_window_title(server_uri)
     if unity_title:
         window_manager.find_unity_window(unity_title)
     else:
@@ -319,8 +368,8 @@ async def send_command(command: str, window_manager: WindowManagerBase) -> dict:
         print("⚠ Unity window not found, proceeding anyway")
 
     try:
-        async with websockets.connect(SERVER_URI) as websocket:
-            print(f"✓ Connected to {SERVER_URI}")
+        async with websockets.connect(server_uri) as websocket:
+            print(f"✓ Connected to {server_uri}")
 
             # コマンドを送信
             request = {"message": command}
@@ -417,32 +466,39 @@ def format_result(response: dict) -> None:
 
 def main():
     """メイン処理"""
-    if len(sys.argv) < 2:
-        print("Usage: python send_message.py <json_command>")
-        print()
-        print(f"Current OS: {CURRENT_OS}")
-        print()
-        print("Examples:")
-        print('  # Single command')
-        print('  python send_message.py \'{"operation":"get_scene_hierarchy","params":{}}\'')
-        print('  python send_message.py \'{"operation":"create_primitive","params":{"type":"sphere","name":"MySphere","color":"red"}}\'')
-        print()
-        print('  # Batch command (max 20 commands)')
-        print('  python send_message.py \'{"operation":"batch","params":{"commands":[')
-        print('    {"operation":"create_primitive","params":{"type":"sphere","name":"Ball","color":"red"}},')
-        print('    {"operation":"transform","params":{"path":"Ball","position":[0,2,0]}}')
-        print('  ]}}\'')
-        print()
-        print(f"Server: {SERVER_URI}")
-        print(f"Timeout: {TIMEOUT_SECONDS}s")
-        print(f"Max batch commands: {MAX_BATCH_COMMANDS}")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Send JSON commands to Unity Command Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Single command (default port)
+  python send_message.py '{"operation":"get_scene_hierarchy","params":{}}'
 
-    command = sys.argv[1]
+  # With explicit port
+  python send_message.py --port 8767 '{"operation":"get_scene_hierarchy","params":{}}'
+
+  # With project path (reads port from Library/ClaudeAgent/port.txt)
+  python send_message.py --project /path/to/unity/project '{"operation":"get_scene_hierarchy","params":{}}'
+
+  # Batch command (max 20 commands)
+  python send_message.py '{"operation":"batch","params":{"commands":[
+    {"operation":"create_primitive","params":{"type":"sphere","name":"Ball","color":"red"}},
+    {"operation":"transform","params":{"path":"Ball","position":[0,2,0]}}
+  ]}}'
+"""
+    )
+    parser.add_argument("command", help="JSON command to send")
+    parser.add_argument("--port", "-p", type=int, help=f"Server port (default: {DEFAULT_PORT})")
+    parser.add_argument("--project", "-P", help="Unity project path (reads port from Library/ClaudeAgent/port.txt)")
+
+    args = parser.parse_args()
+
+    # サーバーURIを決定
+    server_uri = get_server_uri(port=args.port, project=args.project)
 
     # JSONの検証
     try:
-        parsed_json = json.loads(command)
+        parsed_json = json.loads(args.command)
     except json.JSONDecodeError as e:
         print(f"✗ Invalid JSON: {e}")
         sys.exit(1)
@@ -457,7 +513,7 @@ def main():
     window_manager = create_window_manager()
 
     try:
-        response = asyncio.run(send_command(command, window_manager))
+        response = asyncio.run(send_command(args.command, window_manager, server_uri))
         format_result(response)
 
         # 成功/失敗に応じた終了コード
@@ -465,8 +521,8 @@ def main():
 
     except ConnectionRefusedError:
         print("✗ Error: Cannot connect to Unity Command Server")
-        print(f"  Make sure Unity Editor is running and Command Server window is open")
-        print(f"  Expected server at: {SERVER_URI}")
+        print(f"  Make sure Unity Editor is running")
+        print(f"  Expected server at: {server_uri}")
         sys.exit(1)
     except asyncio.TimeoutError:
         print(f"✗ Error: Timeout ({TIMEOUT_SECONDS}s) waiting for response")

@@ -747,12 +747,12 @@ namespace ClaudeAgent
 
             if (!string.IsNullOrEmpty(VersionChecker.LastCheckResult))
             {
-                var statusStyle = new GUIStyle(EditorStyles.miniLabel);
+                var versionStyle = new GUIStyle(EditorStyles.miniLabel);
                 if (VersionChecker.HasUpdate)
-                    statusStyle.normal.textColor = new Color(1f, 0.5f, 0f); // Orange
+                    versionStyle.normal.textColor = new Color(1f, 0.5f, 0f); // Orange
                 else
-                    statusStyle.normal.textColor = new Color(0.4f, 0.7f, 0.4f); // Green
-                EditorGUILayout.LabelField($"({VersionChecker.LastCheckResult})", statusStyle);
+                    versionStyle.normal.textColor = new Color(0.4f, 0.7f, 0.4f); // Green
+                EditorGUILayout.LabelField($"({VersionChecker.LastCheckResult})", versionStyle);
             }
 
             GUILayout.FlexibleSpace();

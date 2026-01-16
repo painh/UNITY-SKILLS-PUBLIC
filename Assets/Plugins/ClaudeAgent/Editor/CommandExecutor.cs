@@ -586,6 +586,7 @@ namespace ClaudeAgent
         /// <summary>
         /// Common helper method to find GameObject by path/name
         /// Returns error if multiple objects exist at the same path
+        /// Supports Prefab Mode - searches in prefab stage when open
         /// </summary>
         /// <returns>(found GameObject, error message) - obj is null and error is set on error</returns>
         private (GameObject obj, string error) FindGameObjectByPath(string path)
@@ -593,6 +594,20 @@ namespace ClaudeAgent
             if (string.IsNullOrEmpty(path))
             {
                 return (null, null);
+            }
+
+            // Check if in Prefab Mode
+            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabStage != null)
+            {
+                // Search within Prefab Stage
+                var prefabResult = FindGameObjectInPrefabStage(prefabStage, path);
+                if (prefabResult.obj != null || prefabResult.error != null)
+                {
+                    return prefabResult;
+                }
+                // If not found in prefab, return not found (don't fall through to scene search)
+                return (null, $"GameObject not found in prefab: {path}");
             }
 
             // Search all objects in scene (excluding prefab assets etc.)
@@ -655,6 +670,105 @@ namespace ClaudeAgent
                                string.Join("\n  ", pathList) + suggestion;
                 return (null, error);
             }
+        }
+
+        /// <summary>
+        /// Finds GameObject within Prefab Stage
+        /// </summary>
+        private (GameObject obj, string error) FindGameObjectInPrefabStage(PrefabStage prefabStage, string path)
+        {
+            var root = prefabStage.prefabContentsRoot;
+            bool isPathFormat = path.Contains("/");
+
+            // Case 1: Root object name matches exactly
+            if (path == root.name)
+            {
+                return (root, null);
+            }
+
+            // Case 2: Path starts with root name (e.g., "RootName/Child/GrandChild")
+            if (isPathFormat && path.StartsWith(root.name + "/"))
+            {
+                string relativePath = path.Substring(root.name.Length + 1);
+                var child = root.transform.Find(relativePath);
+                if (child != null)
+                {
+                    return (child.gameObject, null);
+                }
+            }
+
+            // Case 3: Direct child search (path without root name, e.g., "Child/GrandChild" or "Child")
+            var directResult = root.transform.Find(path);
+            if (directResult != null)
+            {
+                return (directResult.gameObject, null);
+            }
+
+            // Case 4: Search by name only (not path format) - search all descendants
+            if (!isPathFormat)
+            {
+                var matches = new List<GameObject>();
+                FindGameObjectsByNameInHierarchy(root.transform, path, matches);
+
+                if (matches.Count == 1)
+                {
+                    return (matches[0], null);
+                }
+                else if (matches.Count > 1)
+                {
+                    var pathList = new List<string>();
+                    foreach (var go in matches)
+                    {
+                        pathList.Add(GetPrefabRelativePath(root, go));
+                    }
+                    string error = $"Multiple GameObjects match '{path}' in prefab ({matches.Count}). Use full path to specify the target. Found:\n  " +
+                                   string.Join("\n  ", pathList);
+                    return (null, error);
+                }
+            }
+
+            return (null, null);
+        }
+
+        /// <summary>
+        /// Recursively finds GameObjects by name in hierarchy
+        /// </summary>
+        private void FindGameObjectsByNameInHierarchy(Transform parent, string name, List<GameObject> results)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == name)
+                {
+                    results.Add(child.gameObject);
+                }
+                FindGameObjectsByNameInHierarchy(child, name, results);
+            }
+        }
+
+        /// <summary>
+        /// Gets the path of a GameObject relative to prefab root
+        /// </summary>
+        private string GetPrefabRelativePath(GameObject root, GameObject obj)
+        {
+            if (obj == root)
+            {
+                return root.name;
+            }
+
+            string path = obj.name;
+            Transform current = obj.transform.parent;
+
+            while (current != null)
+            {
+                path = current.name + "/" + path;
+                if (current.gameObject == root)
+                {
+                    break;
+                }
+                current = current.parent;
+            }
+
+            return path;
         }
 
         /// <summary>

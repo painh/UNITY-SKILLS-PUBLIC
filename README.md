@@ -7,6 +7,8 @@
 - **macOS 지원 추가**: `send_message.py`에서 AppleScript를 사용한 윈도우 관리
 - **크로스플랫폼 아키텍처**: Windows/macOS 모두 지원
 - **Command Server UI 개선**: 로그 선택/복사 기능 추가
+- **동적 포트 할당**: 여러 Unity 인스턴스 동시 지원
+- **서버 자동 시작**: Unity 시작 시 자동으로 서버 실행 (윈도우 독립적)
 
 ## 동작 환경
 
@@ -54,6 +56,64 @@ pip install websockets
 ```bash
 python send_message.py '{"operation":"get_scene_hierarchy","params":{}}'
 ```
+
+## 여러 Unity 인스턴스 지원
+
+Command Server는 **동적 포트 할당**을 지원합니다:
+
+- 기본 포트: `8766`
+- 이미 사용 중이면 `8767`, `8768`, ... 순서로 자동 할당
+- 포트 번호는 `Library/ClaudeAgent/port.txt`에 저장됨
+
+### 여러 프로젝트 동시 작업
+
+```bash
+# 프로젝트 A (포트 8766)
+cat /path/to/projectA/Library/ClaudeAgent/port.txt
+# 출력: 8766
+
+# 프로젝트 B (포트 8767)
+cat /path/to/projectB/Library/ClaudeAgent/port.txt
+# 출력: 8767
+
+# 특정 프로젝트에 명령 전송
+python send_message.py --port 8767 '{"operation":"get_scene_hierarchy","params":{}}'
+```
+
+## 기능 확장
+
+`CommandExecutor`는 **partial class**로 구현되어 있어 확장이 용이합니다:
+
+```csharp
+// Assets/ClaudeAgent/Editor/CommandExecutor.MyFeature.cs
+namespace ClaudeAgent
+{
+    public partial class CommandExecutor
+    {
+        private void RegisterMyFeatureCommands()
+        {
+            RegisterCommand("my_operation", MyOperationHandler);
+        }
+
+        private (bool, string) MyOperationHandler(CommandParams p)
+        {
+            // 구현
+            return Success("완료");
+        }
+    }
+}
+```
+
+그리고 `CommandExecutor.cs`의 `InitializeCommands()`에 등록:
+```csharp
+RegisterMyFeatureCommands();
+```
+
+## Command Server 윈도우
+
+- **Tools → Unity Command Server**로 열기
+- 인스펙터 옆에 도킹 가능 (Unity 레이아웃으로 저장됨)
+- 서버는 윈도우와 **독립적으로 실행** (윈도우 닫아도 서버 동작)
 
 ## 지원 기능
 

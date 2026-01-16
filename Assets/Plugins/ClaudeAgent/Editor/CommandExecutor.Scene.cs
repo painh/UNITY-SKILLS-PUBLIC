@@ -192,16 +192,35 @@ namespace ClaudeAgent
         }
 
         /// <summary>
-        /// Gets scene hierarchy
+        /// Gets scene hierarchy (or prefab hierarchy when in Prefab Mode)
         /// </summary>
         private (bool, string) GetSceneHierarchy(CommandParams p)
         {
             try
             {
-                var activeScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
                 int maxDepth = (p != null && p.max_depth > 0) ? p.max_depth : -1;
-
                 var sb = new StringBuilder();
+
+                // Check if in Prefab Mode
+                var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+                if (prefabStage != null)
+                {
+                    // Return prefab hierarchy
+                    var root = prefabStage.prefabContentsRoot;
+                    sb.AppendLine($"Prefab Hierarchy: {prefabStage.assetPath}");
+                    sb.AppendLine($"Root: {root.name}");
+                    sb.AppendLine();
+
+                    AppendHierarchy(sb, root, 0, maxDepth);
+
+                    string prefabResult = sb.ToString();
+                    Debug.Log($"[CommandExecutor] Retrieved hierarchy for prefab: {prefabStage.assetPath}");
+                    return (true, prefabResult);
+                }
+
+                // Return scene hierarchy
+                var activeScene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+
                 sb.AppendLine($"Scene Hierarchy: {activeScene.name}");
                 sb.AppendLine($"Path: {activeScene.path}");
                 sb.AppendLine($"Root GameObjects: {activeScene.rootCount}");
