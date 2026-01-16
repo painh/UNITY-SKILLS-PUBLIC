@@ -1096,6 +1096,27 @@ namespace ClaudeAgent
                     {
                         return JsonUtility.FromJson<Bounds>(valueString);
                     }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [centerX, centerY, centerZ, sizeX, sizeY, sizeZ]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 6)
+                        {
+                            return new Bounds(
+                                new Vector3(
+                                    float.Parse(parts[0].Trim()),
+                                    float.Parse(parts[1].Trim()),
+                                    float.Parse(parts[2].Trim())
+                                ),
+                                new Vector3(
+                                    float.Parse(parts[3].Trim()),
+                                    float.Parse(parts[4].Trim()),
+                                    float.Parse(parts[5].Trim())
+                                )
+                            );
+                        }
+                    }
                     else
                     {
                         string cleaned = valueString.Trim().TrimStart('(').TrimEnd(')');
