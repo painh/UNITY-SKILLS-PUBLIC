@@ -405,6 +405,28 @@ namespace ClaudeAgent
                     p.vertices = verticesToken as JArray;
                     Debug.Log($"[CommandExecutor] Parsed vertices: {((JArray)p.vertices).Count} points");
                 }
+
+                // Parse value (can be array, object, or primitive - convert to string for parsing)
+                var valueToken = paramsObj["value"];
+                if (valueToken != null)
+                {
+                    switch (valueToken.Type)
+                    {
+                        case JTokenType.Array:
+                        case JTokenType.Object:
+                            // Convert array/object to JSON string for ParsePropertyValue
+                            p.value = valueToken.ToString(Newtonsoft.Json.Formatting.None);
+                            break;
+                        case JTokenType.String:
+                            p.value = valueToken.ToObject<string>();
+                            break;
+                        case JTokenType.Integer:
+                        case JTokenType.Float:
+                        case JTokenType.Boolean:
+                            p.value = valueToken.ToString();
+                            break;
+                    }
+                }
             }
             catch (Exception e)
             {

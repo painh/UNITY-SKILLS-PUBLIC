@@ -552,7 +552,18 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(obj);
 
                 string result = $"Set {obj.name}.{p.component}.{p.property} = {p.value}";
-                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+
+                // Warn if in play mode (changes will be lost when play mode ends)
+                if (EditorApplication.isPlaying)
+                {
+                    result += "\n⚠️ WARNING: Unity is in Play Mode. Changes will be lost when Play Mode ends!";
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {result}");
+                }
+                else
+                {
+                    UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+                }
+
                 return (true, result);
             }
             catch (Exception e)
@@ -752,7 +763,18 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(sourceObj);
 
                 string result = $"Set {sourceObj.name}.{p.component}.{p.property} = {targetObj.name} ({targetTypeName})";
-                UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+
+                // Warn if in play mode (changes will be lost when play mode ends)
+                if (EditorApplication.isPlaying)
+                {
+                    result += "\n⚠️ WARNING: Unity is in Play Mode. Changes will be lost when Play Mode ends!";
+                    UnityEngine.Debug.LogWarning($"[CommandExecutor] {result}");
+                }
+                else
+                {
+                    UnityEngine.Debug.Log($"[CommandExecutor] {result}");
+                }
+
                 return (true, result);
             }
             catch (Exception e)
@@ -873,10 +895,24 @@ namespace ClaudeAgent
 
                 if (targetType == typeof(Vector3))
                 {
-                    // Supports JSON format {"x":1,"y":2,"z":3} or "1,2,3" or "(1, 2, 3)" format
+                    // Supports JSON format {"x":1,"y":2,"z":3} or [x,y,z] or "1,2,3" or "(1, 2, 3)" format
                     if (valueString.StartsWith("{"))
                     {
                         return JsonUtility.FromJson<Vector3>(valueString);
+                    }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [x, y, z]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 3)
+                        {
+                            return new Vector3(
+                                float.Parse(parts[0].Trim()),
+                                float.Parse(parts[1].Trim()),
+                                float.Parse(parts[2].Trim())
+                            );
+                        }
                     }
                     else
                     {
@@ -899,6 +935,19 @@ namespace ClaudeAgent
                     if (valueString.StartsWith("{"))
                     {
                         return JsonUtility.FromJson<Vector2>(valueString);
+                    }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [x, y]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 2)
+                        {
+                            return new Vector2(
+                                float.Parse(parts[0].Trim()),
+                                float.Parse(parts[1].Trim())
+                            );
+                        }
                     }
                     else
                     {
@@ -936,6 +985,21 @@ namespace ClaudeAgent
                     {
                         return JsonUtility.FromJson<Vector4>(valueString);
                     }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [x, y, z, w]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 4)
+                        {
+                            return new Vector4(
+                                float.Parse(parts[0].Trim()),
+                                float.Parse(parts[1].Trim()),
+                                float.Parse(parts[2].Trim()),
+                                float.Parse(parts[3].Trim())
+                            );
+                        }
+                    }
                     else
                     {
                         string cleaned = valueString.Trim().TrimStart('(').TrimEnd(')');
@@ -958,6 +1022,21 @@ namespace ClaudeAgent
                     {
                         return JsonUtility.FromJson<Quaternion>(valueString);
                     }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [x, y, z, w]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 4)
+                        {
+                            return new Quaternion(
+                                float.Parse(parts[0].Trim()),
+                                float.Parse(parts[1].Trim()),
+                                float.Parse(parts[2].Trim()),
+                                float.Parse(parts[3].Trim())
+                            );
+                        }
+                    }
                     else
                     {
                         string cleaned = valueString.Trim().TrimStart('(').TrimEnd(')');
@@ -979,6 +1058,21 @@ namespace ClaudeAgent
                     if (valueString.StartsWith("{"))
                     {
                         return JsonUtility.FromJson<Rect>(valueString);
+                    }
+                    else if (valueString.StartsWith("["))
+                    {
+                        // JSON array format: [x, y, width, height]
+                        string cleaned = valueString.Trim().TrimStart('[').TrimEnd(']');
+                        string[] parts = cleaned.Split(',');
+                        if (parts.Length == 4)
+                        {
+                            return new Rect(
+                                float.Parse(parts[0].Trim()),
+                                float.Parse(parts[1].Trim()),
+                                float.Parse(parts[2].Trim()),
+                                float.Parse(parts[3].Trim())
+                            );
+                        }
                     }
                     else
                     {

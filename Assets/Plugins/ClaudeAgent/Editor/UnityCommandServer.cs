@@ -235,6 +235,9 @@ namespace ClaudeAgent
             // Start server immediately (independent of window)
             StartServer();
 
+            // Initialize debug file logging settings
+            CommandExecutor.InitializeFileLogging();
+
             // Register for editor quit to stop server
             EditorApplication.quitting += StopServer;
 
