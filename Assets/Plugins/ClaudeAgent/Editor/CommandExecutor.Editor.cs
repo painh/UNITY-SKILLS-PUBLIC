@@ -32,7 +32,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.menu_path))
                 {
                     string error = "Missing required parameter: menu_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -42,18 +42,18 @@ namespace ClaudeAgent
                 if (!executed)
                 {
                     string error = $"Menu item not found: {p.menu_path}";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 string result = $"Executed menu item: {p.menu_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error executing menu item: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -89,7 +89,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error getting editor state: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -148,7 +148,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error getting selection: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -168,13 +168,13 @@ namespace ClaudeAgent
                 // Match Unity editor window title format
                 string title = $"{Application.productName} - {sceneName} - Unity {Application.unityVersion}";
 
-                Debug.Log($"[CommandExecutor] Window title: {title}");
+                ConsoleLog($"[CommandExecutor] Window title: {title}");
                 return (true, title);
             }
             catch (Exception e)
             {
                 string error = $"Error getting window title: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -189,7 +189,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -197,7 +197,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -208,13 +208,13 @@ namespace ClaudeAgent
                 EditorGUIUtility.PingObject(obj);
 
                 string result = $"Selected GameObject: {obj.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting selection: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -240,13 +240,13 @@ namespace ClaudeAgent
                         if (EditorApplication.isPlaying)
                         {
                             string warning = "[WARNING] Already in play mode";
-                            Debug.LogWarning($"[CommandExecutor] {warning}");
+                            ConsoleLogWarning($"[CommandExecutor] {warning}");
                             return (true, warning);
                         }
                         if (EditorApplication.isCompiling)
                         {
                             string error = "Cannot enter play mode while compiling";
-                            Debug.LogError($"[CommandExecutor] {error}");
+                            ConsoleLogError($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                         EditorApplication.EnterPlaymode();
@@ -257,7 +257,7 @@ namespace ClaudeAgent
                         if (!EditorApplication.isPlaying)
                         {
                             string warning = "[WARNING] Not in play mode";
-                            Debug.LogWarning($"[CommandExecutor] {warning}");
+                            ConsoleLogWarning($"[CommandExecutor] {warning}");
                             return (true, warning);
                         }
                         EditorApplication.ExitPlaymode();
@@ -268,13 +268,13 @@ namespace ClaudeAgent
                         if (!EditorApplication.isPlaying)
                         {
                             string error = "Cannot pause: not in play mode";
-                            Debug.LogError($"[CommandExecutor] {error}");
+                            ConsoleLogError($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                         if (EditorApplication.isPaused)
                         {
                             string warning = "[WARNING] Already paused";
-                            Debug.LogWarning($"[CommandExecutor] {warning}");
+                            ConsoleLogWarning($"[CommandExecutor] {warning}");
                             return (true, warning);
                         }
                         EditorApplication.isPaused = true;
@@ -285,13 +285,13 @@ namespace ClaudeAgent
                         if (!EditorApplication.isPlaying)
                         {
                             string error = "Cannot resume: not in play mode";
-                            Debug.LogError($"[CommandExecutor] {error}");
+                            ConsoleLogError($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                         if (!EditorApplication.isPaused)
                         {
                             string warning = "[WARNING] Not paused";
-                            Debug.LogWarning($"[CommandExecutor] {warning}");
+                            ConsoleLogWarning($"[CommandExecutor] {warning}");
                             return (true, warning);
                         }
                         EditorApplication.isPaused = false;
@@ -300,14 +300,14 @@ namespace ClaudeAgent
 
                     default:
                         string unknownError = $"Unknown action: '{p.action}'. Valid actions: play, stop, pause, resume";
-                        Debug.LogError($"[CommandExecutor] {unknownError}");
+                        ConsoleLogError($"[CommandExecutor] {unknownError}");
                         return (false, unknownError);
                 }
             }
             catch (Exception e)
             {
                 string error = $"Error in playmode: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }

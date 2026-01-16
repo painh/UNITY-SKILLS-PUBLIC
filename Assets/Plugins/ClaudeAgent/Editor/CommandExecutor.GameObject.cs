@@ -37,7 +37,7 @@ namespace ClaudeAgent
                 if (p == null)
                 {
                     string error = "Missing required parameters";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -45,7 +45,7 @@ namespace ClaudeAgent
                 var (typeSuccess, primitiveType, typeError) = TryParsePrimitiveType(p.type);
                 if (!typeSuccess)
                 {
-                    Debug.LogError($"[CommandExecutor] {typeError}");
+                    ConsoleLogError($"[CommandExecutor] {typeError}");
                     return (false, typeError);
                 }
 
@@ -57,7 +57,7 @@ namespace ClaudeAgent
                 var (posValid, posError) = ValidateSpaceParameter("position", p.position, ref posSpace, defaultSpace);
                 if (!posValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {posError}");
+                    ConsoleLogError($"[CommandExecutor] {posError}");
                     return (false, posError);
                 }
 
@@ -65,7 +65,7 @@ namespace ClaudeAgent
                 var (rotValid, rotError) = ValidateSpaceParameter("rotation", p.rotation, ref rotSpace, defaultSpace);
                 if (!rotValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {rotError}");
+                    ConsoleLogError($"[CommandExecutor] {rotError}");
                     return (false, rotError);
                 }
 
@@ -73,7 +73,7 @@ namespace ClaudeAgent
                 var (scaleValid, scaleError) = ValidateSpaceParameter("scale", p.scale, ref scaleSpace, defaultSpace);
                 if (!scaleValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {scaleError}");
+                    ConsoleLogError($"[CommandExecutor] {scaleError}");
                     return (false, scaleError);
                 }
 
@@ -82,7 +82,7 @@ namespace ClaudeAgent
                 string duplicateError = CheckDuplicateRootName(desiredName);
                 if (duplicateError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {duplicateError}");
+                    ConsoleLogError($"[CommandExecutor] {duplicateError}");
                     return (false, duplicateError);
                 }
 
@@ -98,7 +98,7 @@ namespace ClaudeAgent
                     {
                         // Primitive already created, destroy and return error
                         GameObject.DestroyImmediate(gameObject);
-                        Debug.LogError($"[CommandExecutor] {colorError}");
+                        ConsoleLogError($"[CommandExecutor] {colorError}");
                         return (false, colorError);
                     }
 
@@ -129,7 +129,7 @@ namespace ClaudeAgent
                     {
                         GameObject.DestroyImmediate(gameObject);
                         string error = parentFindError ?? $"Parent object not found: {p.parent}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                 }
@@ -196,13 +196,13 @@ namespace ClaudeAgent
                 {
                     result += $" ({string.Join(", ", spaceInfo)})";
                 }
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating primitive: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -222,7 +222,7 @@ namespace ClaudeAgent
                 var (posValid, posError) = ValidateSpaceParameter("position", p?.position, ref posSpace, defaultSpace);
                 if (!posValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {posError}");
+                    ConsoleLogError($"[CommandExecutor] {posError}");
                     return (false, posError);
                 }
 
@@ -234,7 +234,7 @@ namespace ClaudeAgent
                     string duplicateError = CheckDuplicateRootName(desiredName);
                     if (duplicateError != null)
                     {
-                        Debug.LogError($"[CommandExecutor] {duplicateError}");
+                        ConsoleLogError($"[CommandExecutor] {duplicateError}");
                         return (false, duplicateError);
                     }
                 }
@@ -254,7 +254,7 @@ namespace ClaudeAgent
                         // Destroy the created object and return error
                         UnityEngine.Object.DestroyImmediate(gameObject);
                         string error = parentFindError ?? $"Parent object not found: {p.parent}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                 }
@@ -282,13 +282,13 @@ namespace ClaudeAgent
                 {
                     result += $" (position: {posSpace})";
                 }
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating empty GameObject: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -303,7 +303,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -311,7 +311,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -319,13 +319,13 @@ namespace ClaudeAgent
                 Undo.DestroyObjectImmediate(obj);
 
                 string result = $"Deleted GameObject: {objName}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error deleting GameObject: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -340,7 +340,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -348,7 +348,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -356,13 +356,13 @@ namespace ClaudeAgent
                 obj.SetActive(p.active);
 
                 string result = $"Set {obj.name} active to: {p.active}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting active state: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -378,7 +378,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -386,7 +386,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -399,12 +399,12 @@ namespace ClaudeAgent
                     if (hasTag)
                     {
                         string error = "Cannot specify both 'get' and 'tag'";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
                     string result = $"Tag of {obj.name}: {obj.tag}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
 
@@ -412,7 +412,7 @@ namespace ClaudeAgent
                 if (!hasTag)
                 {
                     string error = "Must specify 'tag' or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -431,7 +431,7 @@ namespace ClaudeAgent
                 if (!tagExists)
                 {
                     string error = $"Tag not found: {p.tag}. Use 'create_tag' operation or add the tag in Edit > Project Settings > Tags and Layers first.";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -439,13 +439,13 @@ namespace ClaudeAgent
                 obj.tag = p.tag;
 
                 string result2 = $"Set tag of {obj.name} to: {p.tag}";
-                Debug.Log($"[CommandExecutor] {result2}");
+                ConsoleLog($"[CommandExecutor] {result2}");
                 return (true, result2);
             }
             catch (Exception e)
             {
                 string error = $"Error setting tag: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -460,7 +460,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.tag))
                 {
                     string error = "Missing required parameter: tag";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -475,7 +475,7 @@ namespace ClaudeAgent
                     if (tag.stringValue == p.tag)
                     {
                         string info = $"Tag already exists: {p.tag}";
-                        Debug.Log($"[CommandExecutor] {info}");
+                        ConsoleLog($"[CommandExecutor] {info}");
                         return (true, info);
                     }
                 }
@@ -487,13 +487,13 @@ namespace ClaudeAgent
                 tagManager.ApplyModifiedProperties();
 
                 string result = $"Created tag: {p.tag}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating tag: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -508,7 +508,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.tag))
                 {
                     string error = "Missing required parameter: tag";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -519,7 +519,7 @@ namespace ClaudeAgent
                     if (p.tag == builtInTag)
                     {
                         string error = $"Cannot delete built-in tag: {p.tag}";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                 }
@@ -538,19 +538,19 @@ namespace ClaudeAgent
                         tagManager.ApplyModifiedProperties();
 
                         string result = $"Deleted tag: {p.tag}";
-                        Debug.Log($"[CommandExecutor] {result}");
+                        ConsoleLog($"[CommandExecutor] {result}");
                         return (true, result);
                     }
                 }
 
                 string notFoundError = $"Tag not found: {p.tag}";
-                Debug.LogWarning($"[CommandExecutor] {notFoundError}");
+                ConsoleLogWarning($"[CommandExecutor] {notFoundError}");
                 return (false, notFoundError);
             }
             catch (Exception e)
             {
                 string error = $"Error deleting tag: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -579,7 +579,7 @@ namespace ClaudeAgent
                     else if (findError != null)
                     {
                         // Return duplicate error as is
-                        Debug.LogWarning($"[CommandExecutor] {findError}");
+                        ConsoleLogWarning($"[CommandExecutor] {findError}");
                         return (false, findError);
                     }
                 }
@@ -645,13 +645,13 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Found {foundObjects.Count} objects");
+                ConsoleLog($"[CommandExecutor] Found {foundObjects.Count} objects");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error finding GameObject: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -696,7 +696,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -705,7 +705,7 @@ namespace ClaudeAgent
                 if (string.IsNullOrEmpty(newName))
                 {
                     string error = "Missing required parameter: new_name (or name)";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -713,7 +713,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -722,13 +722,13 @@ namespace ClaudeAgent
                 obj.name = newName;
 
                 string result = $"Renamed '{oldName}' to '{newName}'";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting name: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -743,7 +743,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -751,7 +751,7 @@ namespace ClaudeAgent
                 if (child == null)
                 {
                     string error = childFindError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -764,7 +764,7 @@ namespace ClaudeAgent
                     if (parentObj == null)
                     {
                         string error = parentFindError ?? $"Parent GameObject not found: {p.parent}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     newParent = parentObj.transform;
@@ -774,13 +774,13 @@ namespace ClaudeAgent
                 Undo.SetTransformParent(child.transform, newParent, p.world_position_stays, "Set Parent");
 
                 string result = $"Set {child.name}'s parent to: {parentName} (world_position_stays: {p.world_position_stays})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error setting parent: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -795,7 +795,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -803,7 +803,7 @@ namespace ClaudeAgent
                 if (original == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -814,7 +814,7 @@ namespace ClaudeAgent
                     string duplicateError = CheckDuplicateRootName(desiredName);
                     if (duplicateError != null)
                     {
-                        Debug.LogError($"[CommandExecutor] {duplicateError}");
+                        ConsoleLogError($"[CommandExecutor] {duplicateError}");
                         return (false, duplicateError);
                     }
                 }
@@ -834,13 +834,13 @@ namespace ClaudeAgent
                 Undo.RegisterCreatedObjectUndo(duplicate, "Duplicate GameObject");
 
                 string result = $"Duplicated '{original.name}' as '{duplicate.name}'";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error duplicating GameObject: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -855,14 +855,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.target_path))
                 {
                     string error = "Missing required parameter: target_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -870,7 +870,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -878,7 +878,7 @@ namespace ClaudeAgent
                 if (target == null)
                 {
                     string error = targetFindError ?? $"Target GameObject not found: {p.target_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -886,13 +886,13 @@ namespace ClaudeAgent
                 obj.transform.LookAt(target.transform);
 
                 string result = $"Set {obj.name} to look at {target.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error with LookAt: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -908,7 +908,7 @@ namespace ClaudeAgent
                 var (startSuccess, startPos, startError) = ResolvePosition(p.start, "start");
                 if (!startSuccess)
                 {
-                    Debug.LogError($"[CommandExecutor] {startError}");
+                    ConsoleLogError($"[CommandExecutor] {startError}");
                     return (false, startError);
                 }
 
@@ -916,7 +916,7 @@ namespace ClaudeAgent
                 var (endSuccess, endPos, endError) = ResolvePosition(p.end, "end");
                 if (!endSuccess)
                 {
-                    Debug.LogError($"[CommandExecutor] {endError}");
+                    ConsoleLogError($"[CommandExecutor] {endError}");
                     return (false, endError);
                 }
 
@@ -930,7 +930,7 @@ namespace ClaudeAgent
                 var (posValid, posError) = ValidateSpaceParameter("position", dummyCoords, ref posSpace, defaultSpace);
                 if (!posValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {posError}");
+                    ConsoleLogError($"[CommandExecutor] {posError}");
                     return (false, posError);
                 }
 
@@ -941,7 +941,7 @@ namespace ClaudeAgent
                     string duplicateError = CheckDuplicateRootName(name);
                     if (duplicateError != null)
                     {
-                        Debug.LogError($"[CommandExecutor] {duplicateError}");
+                        ConsoleLogError($"[CommandExecutor] {duplicateError}");
                         return (false, duplicateError);
                     }
                 }
@@ -964,7 +964,7 @@ namespace ClaudeAgent
                     {
                         GameObject.DestroyImmediate(lineObj);
                         string error = parentFindError ?? $"Parent object not found: {p.parent}";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                 }
@@ -999,7 +999,7 @@ namespace ClaudeAgent
                     if (!colorSuccess)
                     {
                         GameObject.DestroyImmediate(lineObj);
-                        Debug.LogError($"[CommandExecutor] {colorError}");
+                        ConsoleLogError($"[CommandExecutor] {colorError}");
                         return (false, colorError);
                     }
                     color = parsed;
@@ -1022,7 +1022,7 @@ namespace ClaudeAgent
                 {
                     GameObject.DestroyImmediate(lineObj);
                     string error = $"Shader not found: {shaderName}";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -1033,13 +1033,13 @@ namespace ClaudeAgent
                 Undo.RegisterCreatedObjectUndo(lineObj, "Create Line");
 
                 string result = $"Created line: {name} (position: {posSpace})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating line: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }

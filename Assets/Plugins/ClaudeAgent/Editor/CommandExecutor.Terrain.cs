@@ -29,7 +29,7 @@ namespace ClaudeAgent
                 if (p == null)
                 {
                     string error = "Missing required parameters";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -41,7 +41,7 @@ namespace ClaudeAgent
                 var (posValid, posError) = ValidateSpaceParameter("position", p.position, ref posSpace, defaultSpace);
                 if (!posValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {posError}");
+                    ConsoleLogError($"[CommandExecutor] {posError}");
                     return (false, posError);
                 }
 
@@ -55,7 +55,7 @@ namespace ClaudeAgent
                 if (!IsValidHeightmapResolution(resolution))
                 {
                     string error = $"Invalid heightmap_resolution: {resolution}. Must be 2^n + 1 (e.g., 33, 65, 129, 257, 513, 1025)";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -64,7 +64,7 @@ namespace ClaudeAgent
                 string duplicateError = CheckDuplicateRootName(desiredName);
                 if (duplicateError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {duplicateError}");
+                    ConsoleLogError($"[CommandExecutor] {duplicateError}");
                     return (false, duplicateError);
                 }
 
@@ -93,7 +93,7 @@ namespace ClaudeAgent
                         GameObject.DestroyImmediate(terrainObj);
                         AssetDatabase.DeleteAsset(assetPath);
                         string error = parentFindError ?? $"Parent GameObject not found: {p.parent}";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     terrainObj.transform.SetParent(parentObj.transform, false);
@@ -125,13 +125,13 @@ namespace ClaudeAgent
                 }
 
                 string result = $"Created terrain: {desiredName} (Size: {width}x{length}x{height}, Resolution: {resolution}{parentInfo}){spaceInfo}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating terrain: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -147,7 +147,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -155,7 +155,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -163,7 +163,7 @@ namespace ClaudeAgent
                 if (terrain == null)
                 {
                     string error = $"Terrain component not found on: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -171,7 +171,7 @@ namespace ClaudeAgent
                 if (terrainData == null)
                 {
                     string error = $"TerrainData not found for: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -191,7 +191,7 @@ namespace ClaudeAgent
                     if (hasAnySetParam)
                     {
                         string error = "Cannot specify both 'get' and height modification parameters";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -202,7 +202,7 @@ namespace ClaudeAgent
                 if (!hasAnySetParam)
                 {
                     string error = "At least one parameter must be specified (heights, flatten_height, or center+radius+height_delta), or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -224,7 +224,7 @@ namespace ClaudeAgent
                     if (p.heights.Length != expectedLength)
                     {
                         string error = $"Invalid heights array length: {p.heights.Length}. Expected: {expectedLength} ({resolution}x{resolution})";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -239,7 +239,7 @@ namespace ClaudeAgent
                     terrainData.SetHeights(0, 0, heights2D);
 
                     string result = $"Set terrain heights for {obj.name} from array";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
                 // Flatten with single height value
@@ -261,18 +261,18 @@ namespace ClaudeAgent
                     EditorUtility.SetDirty(terrainData);
 
                     string result = $"Flattened terrain {obj.name} to height: {p.flatten_height}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
 
                 string fallbackError = "No valid height parameters provided";
-                Debug.LogError($"[CommandExecutor] {fallbackError}");
+                ConsoleLogError($"[CommandExecutor] {fallbackError}");
                 return (false, fallbackError);
             }
             catch (Exception e)
             {
                 string error = $"Error in terrain_height command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -316,7 +316,7 @@ namespace ClaudeAgent
             }
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved terrain info for: {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved terrain info for: {obj.name}");
             return (true, result);
         }
 
@@ -397,7 +397,7 @@ namespace ClaudeAgent
 
             string action = p.height_delta >= 0 ? "raised" : "lowered";
             string result = $"Painted terrain height: {action} area at ({p.center[0]}, {p.center[1]}) with radius {p.radius}, delta {p.height_delta} ({modifiedCount} points modified)";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -411,14 +411,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.texture_path))
                 {
                     string error = "Missing required parameter: texture_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -426,7 +426,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -434,7 +434,7 @@ namespace ClaudeAgent
                 if (terrain == null)
                 {
                     string error = $"Terrain component not found on: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -442,7 +442,7 @@ namespace ClaudeAgent
                 if (terrainData == null)
                 {
                     string error = $"TerrainData not found for: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -451,7 +451,7 @@ namespace ClaudeAgent
                 if (diffuseTexture == null)
                 {
                     string error = $"Texture not found at path: {p.texture_path}";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -462,7 +462,7 @@ namespace ClaudeAgent
                     normalTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(p.normal_path);
                     if (normalTexture == null)
                     {
-                        Debug.LogWarning($"[CommandExecutor] Normal map not found at path: {p.normal_path}");
+                        ConsoleLogWarning($"[CommandExecutor] Normal map not found at path: {p.normal_path}");
                     }
                 }
 
@@ -496,13 +496,13 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(terrainData);
 
                 string result = $"Added terrain layer '{layerName}' to {obj.name} (Total layers: {newLayers.Length})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error adding terrain layer: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -518,14 +518,14 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (p.layer_index < 0)
                 {
                     string error = "Missing or invalid parameter: layer_index (must be >= 0)";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -533,7 +533,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -541,7 +541,7 @@ namespace ClaudeAgent
                 if (terrain == null)
                 {
                     string error = $"Terrain component not found on: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -549,7 +549,7 @@ namespace ClaudeAgent
                 if (terrainData == null)
                 {
                     string error = $"TerrainData not found for: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -557,14 +557,14 @@ namespace ClaudeAgent
                 if (layerCount == 0)
                 {
                     string error = "Terrain has no layers. Add layers first using add_terrain_layer";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (p.layer_index >= layerCount)
                 {
                     string error = $"Invalid layer_index: {p.layer_index}. Terrain has {layerCount} layers (0-{layerCount - 1})";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -580,7 +580,7 @@ namespace ClaudeAgent
                     if (p.fill && hasPaintParams)
                     {
                         string error = "Cannot specify both 'fill' and paint parameters (center, radius)";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -588,7 +588,7 @@ namespace ClaudeAgent
                     if (hasCenter != hasRadius)
                     {
                         string error = "Paint mode requires both 'center' and 'radius' parameters";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -601,7 +601,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error in terrain_texture command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -665,7 +665,7 @@ namespace ClaudeAgent
 
             string layerName = terrainData.terrainLayers[p.layer_index].diffuseTexture?.name ?? $"Layer{p.layer_index}";
             string result = $"Filled terrain with layer [{p.layer_index}] '{layerName}' at strength {strength:F2}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -758,7 +758,7 @@ namespace ClaudeAgent
 
             string layerName = terrainData.terrainLayers[p.layer_index].diffuseTexture?.name ?? $"Layer{p.layer_index}";
             string result = $"Painted terrain texture: layer [{p.layer_index}] '{layerName}' at ({p.center[0]}, {p.center[1]}) with radius {p.radius} ({modifiedCount} points modified)";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 

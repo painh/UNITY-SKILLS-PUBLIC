@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.3";
+        public const string CurrentVersion = "0.0.4";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -784,6 +784,18 @@ namespace ClaudeAgent
                 }
             }
 
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(5);
+
+            // Console logging toggle
+            EditorGUILayout.BeginHorizontal();
+            bool newEnableConsoleLogging = EditorGUILayout.ToggleLeft("Enable Console Logging", CommandExecutor.EnableConsoleLogging, GUILayout.Width(160));
+            if (newEnableConsoleLogging != CommandExecutor.EnableConsoleLogging)
+            {
+                CommandExecutor.EnableConsoleLogging = newEnableConsoleLogging;
+            }
+            EditorGUILayout.LabelField("(Show command logs in Unity Console)", EditorStyles.miniLabel);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);

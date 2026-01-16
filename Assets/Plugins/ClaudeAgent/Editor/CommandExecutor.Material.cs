@@ -31,7 +31,7 @@ namespace ClaudeAgent
                 if (p == null)
                 {
                     string error = "Missing parameters";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -51,7 +51,7 @@ namespace ClaudeAgent
                 if (string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path (or use folder_path for batch, material_path for asset operation)";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -59,7 +59,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -68,7 +68,7 @@ namespace ClaudeAgent
                 if (renderer == null)
                 {
                     string error = $"Renderer component not found on {obj.name}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -88,7 +88,7 @@ namespace ClaudeAgent
                     if (hasAnySetParam)
                     {
                         string error = "Cannot specify both 'get' and property values (material_path, color, metallic, smoothness)";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -99,7 +99,7 @@ namespace ClaudeAgent
                 if (!hasAnySetParam)
                 {
                     string error = "At least one property must be specified (material_path, color, metallic, or smoothness), or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -113,7 +113,7 @@ namespace ClaudeAgent
                     if (newMaterial == null)
                     {
                         string error = $"Material not found at path: {p.material_path}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     Undo.RecordObject(renderer, "Set Material");
@@ -153,7 +153,7 @@ namespace ClaudeAgent
                             var (colorSuccess, parsedColor, colorError) = TryParseColor(p.color);
                             if (!colorSuccess)
                             {
-                                Debug.LogError($"[CommandExecutor] {colorError}");
+                                ConsoleLogError($"[CommandExecutor] {colorError}");
                                 return (false, colorError);
                             }
                             finalColor = parsedColor;
@@ -208,13 +208,13 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(renderer);
 
                 string result = $"Set {obj.name} material: {string.Join(", ", results)}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error in material command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -280,7 +280,7 @@ namespace ClaudeAgent
             }
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved material info for {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved material info for {obj.name}");
             return (true, result);
         }
 
@@ -294,7 +294,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.material_path))
                 {
                     string error = "Missing required parameter: material_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -321,7 +321,7 @@ namespace ClaudeAgent
                 if (shader == null)
                 {
                     string error = $"Shader not found: {shaderName}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -340,7 +340,7 @@ namespace ClaudeAgent
                     var (colorSuccess, parsedColor, colorError) = TryParseColor(p.color);
                     if (!colorSuccess)
                     {
-                        Debug.LogError($"[CommandExecutor] {colorError}");
+                        ConsoleLogError($"[CommandExecutor] {colorError}");
                         return (false, colorError);
                     }
                     // Set to appropriate property based on shader
@@ -382,13 +382,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Created material at: {p.material_path} (Shader: {shaderName})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating material: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -405,7 +405,7 @@ namespace ClaudeAgent
                 if (mat == null)
                 {
                     string error = $"Material not found at path: {p.material_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -416,7 +416,7 @@ namespace ClaudeAgent
                     if (!string.IsNullOrEmpty(p.shader))
                     {
                         string error = "Cannot specify both 'get' and 'shader'";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     return GetMaterialAssetInfo(mat, p.material_path);
@@ -429,13 +429,13 @@ namespace ClaudeAgent
                 }
 
                 string err = "No operation specified. Use 'get: true' for info or 'shader' to change shader";
-                Debug.LogError($"[CommandExecutor] {err}");
+                ConsoleLogError($"[CommandExecutor] {err}");
                 return (false, err);
             }
             catch (Exception e)
             {
                 string error = $"Error in material asset operation: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -450,7 +450,7 @@ namespace ClaudeAgent
                 if (string.IsNullOrEmpty(p.shader))
                 {
                     string error = "shader parameter is required for batch operation";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -458,7 +458,7 @@ namespace ClaudeAgent
                 if (!AssetDatabase.IsValidFolder(p.folder_path))
                 {
                     string error = $"Folder not found: {p.folder_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -467,7 +467,7 @@ namespace ClaudeAgent
                 if (newShader == null)
                 {
                     string error = $"Shader not found: {p.shader}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -541,13 +541,13 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error in batch shader change: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -595,7 +595,7 @@ namespace ClaudeAgent
             sb.AppendLine($"Render Queue: {mat.renderQueue}");
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved material asset info for {mat.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved material asset info for {mat.name}");
             return (true, result);
         }
 
@@ -608,7 +608,7 @@ namespace ClaudeAgent
             if (newShader == null)
             {
                 string error = $"Shader not found: {shaderName}";
-                Debug.LogWarning($"[CommandExecutor] {error}");
+                ConsoleLogWarning($"[CommandExecutor] {error}");
                 return (false, error);
             }
 
@@ -619,7 +619,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Changed shader of '{mat.name}' from '{oldShaderName}' to '{shaderName}'";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 

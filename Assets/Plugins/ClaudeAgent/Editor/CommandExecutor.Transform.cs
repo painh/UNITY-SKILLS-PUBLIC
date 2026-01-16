@@ -31,7 +31,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -39,7 +39,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -50,7 +50,7 @@ namespace ClaudeAgent
                     if (p.position != null || p.rotation != null || p.scale != null)
                     {
                         string error = "Cannot specify both 'get' and property values (position, rotation, scale)";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -65,7 +65,7 @@ namespace ClaudeAgent
                 if (!hasPosition && !hasRotation && !hasScale)
                 {
                     string error = "At least one property must be specified (position, rotation, or scale), or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -113,13 +113,13 @@ namespace ClaudeAgent
 
                 string spaceType = useWorld ? "world" : "local";
                 string result = $"Set {obj.name} ({spaceType}): {string.Join(", ", results)}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error in transform command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -145,7 +145,7 @@ namespace ClaudeAgent
             sb.AppendLine($"  Children: {obj.transform.childCount}");
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved transform info for {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved transform info for {obj.name}");
             return (true, result);
         }
 

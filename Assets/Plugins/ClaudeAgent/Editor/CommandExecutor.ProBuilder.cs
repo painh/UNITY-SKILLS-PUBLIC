@@ -29,14 +29,14 @@ namespace ClaudeAgent
                 if (p == null)
                 {
                     string error = "Missing required parameters";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.shape))
                 {
                     string error = "Missing required parameter: shape";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -45,7 +45,7 @@ namespace ClaudeAgent
                 string duplicateError = CheckDuplicateRootName(desiredName);
                 if (duplicateError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {duplicateError}");
+                    ConsoleLogError($"[CommandExecutor] {duplicateError}");
                     return (false, duplicateError);
                 }
 
@@ -85,14 +85,14 @@ namespace ClaudeAgent
                         break;
                     default:
                         string error = $"Unknown shape type: '{p.shape}'. Valid types: stair, door, curved_stair, arch, pipe, cone, prism. For cube/cylinder, use 'create_primitive' command.";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                 }
 
                 if (mesh == null)
                 {
                     string error = $"Failed to create ProBuilder shape: {p.shape}";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -124,7 +124,7 @@ namespace ClaudeAgent
                     if (!colorSuccess)
                     {
                         GameObject.DestroyImmediate(mesh.gameObject);
-                        Debug.LogError($"[CommandExecutor] {colorError}");
+                        ConsoleLogError($"[CommandExecutor] {colorError}");
                         return (false, colorError);
                     }
                     ApplyColorToProBuilderMesh(mesh, parsedColor);
@@ -139,13 +139,13 @@ namespace ClaudeAgent
                 Undo.RegisterCreatedObjectUndo(mesh.gameObject, "Create ProBuilder Shape");
 
                 string result = $"Created ProBuilder {p.shape}: {mesh.gameObject.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating ProBuilder shape: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -327,14 +327,14 @@ namespace ClaudeAgent
                 if (p == null)
                 {
                     string error = "Missing required parameters";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 if (string.IsNullOrEmpty(p.shape))
                 {
                     string error = "Missing required parameter: shape";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -343,7 +343,7 @@ namespace ClaudeAgent
                 if (verticesArray == null || verticesArray.Count < 2)
                 {
                     string error = "Missing required parameter: vertices (need at least 2 points)";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -367,14 +367,14 @@ namespace ClaudeAgent
                         return (false, "Need 2 or 4 vertices for cube");
                     default:
                         string error = $"Shape '{p.shape}' is not supported. Supported: cylinder, capsule, prism, cube";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                 }
             }
             catch (Exception e)
             {
                 string error = $"Error creating fitted shape: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -449,7 +449,7 @@ namespace ClaudeAgent
             if (width < 0.001f || height < 0.001f)
             {
                 string error = "Degenerate triangle: vertices are too close or collinear";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
 
@@ -473,7 +473,7 @@ namespace ClaudeAgent
                 string duplicateError = CheckDuplicateRootName(desiredName);
                 if (duplicateError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {duplicateError}");
+                    ConsoleLogError($"[CommandExecutor] {duplicateError}");
                     return (false, duplicateError);
                 }
             }
@@ -506,7 +506,7 @@ namespace ClaudeAgent
                 if (!colorSuccess)
                 {
                     GameObject.DestroyImmediate(mesh.gameObject);
-                    Debug.LogError($"[CommandExecutor] {colorError}");
+                    ConsoleLogError($"[CommandExecutor] {colorError}");
                     return (false, colorError);
                 }
                 ApplyColorToProBuilderMesh(mesh, parsedColor);
@@ -520,7 +520,7 @@ namespace ClaudeAgent
             Undo.RegisterCreatedObjectUndo(mesh.gameObject, "Create Fitted ProBuilder Shape");
 
             string result = $"Created fitted prism: {mesh.gameObject.name} (vertices: {posSpace})";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 

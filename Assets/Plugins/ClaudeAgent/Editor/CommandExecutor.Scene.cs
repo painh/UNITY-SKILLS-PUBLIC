@@ -31,7 +31,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.scene_path))
                 {
                     string error = "Missing required parameter: scene_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -47,7 +47,7 @@ namespace ClaudeAgent
                         if (!saved)
                         {
                             string error = "Failed to save current scene before opening new scene";
-                            Debug.LogWarning($"[CommandExecutor] {error}");
+                            ConsoleLogWarning($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                     }
@@ -60,13 +60,13 @@ namespace ClaudeAgent
                 );
 
                 string result = $"Opened scene: {scene.name} (path: {p.scene_path})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error opening scene: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -90,12 +90,12 @@ namespace ClaudeAgent
                     if (!saved)
                     {
                         string error = $"Failed to save scene to: {p.scene_path}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
                     string result = $"Saved scene to: {p.scene_path}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
                 else
@@ -104,7 +104,7 @@ namespace ClaudeAgent
                     if (string.IsNullOrEmpty(currentScene.path))
                     {
                         string error = "Current scene has no path. Use scene_path parameter to save as new file.";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -112,19 +112,19 @@ namespace ClaudeAgent
                     if (!savedToCurrentPath)
                     {
                         string error = "Failed to save current scene";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
                     string result = $"Saved scene: {currentScene.name} ({currentScene.path})";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
             }
             catch (Exception e)
             {
                 string error = $"Error saving scene: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -139,7 +139,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.scene_path))
                 {
                     string error = "Missing required parameter: scene_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -155,7 +155,7 @@ namespace ClaudeAgent
                         if (!saved)
                         {
                             string error = "Failed to save current scene before creating new scene";
-                            Debug.LogWarning($"[CommandExecutor] {error}");
+                            ConsoleLogWarning($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                     }
@@ -175,18 +175,18 @@ namespace ClaudeAgent
                 if (!sceneSaved)
                 {
                     string error = $"Failed to save new scene to: {p.scene_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 string result = $"Created new scene at: {p.scene_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating scene: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -214,7 +214,7 @@ namespace ClaudeAgent
                     AppendHierarchy(sb, root, 0, maxDepth);
 
                     string prefabResult = sb.ToString();
-                    Debug.Log($"[CommandExecutor] Retrieved hierarchy for prefab: {prefabStage.assetPath}");
+                    ConsoleLog($"[CommandExecutor] Retrieved hierarchy for prefab: {prefabStage.assetPath}");
                     return (true, prefabResult);
                 }
 
@@ -235,13 +235,13 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Retrieved hierarchy for scene: {activeScene.name}");
+                ConsoleLog($"[CommandExecutor] Retrieved hierarchy for scene: {activeScene.name}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error getting scene hierarchy: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -267,13 +267,13 @@ namespace ClaudeAgent
                 sb.AppendLine($"Is Valid: {activeScene.IsValid()}");
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Retrieved active scene info: {activeScene.name}");
+                ConsoleLog($"[CommandExecutor] Retrieved active scene info: {activeScene.name}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error getting active scene: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }

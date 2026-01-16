@@ -72,7 +72,7 @@ namespace ClaudeAgent
                 var validationError = ValidateJsonFormat(jsonCommand);
                 if (validationError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {validationError}");
+                    ConsoleLogError($"[CommandExecutor] {validationError}");
                     return (false, validationError);
                 }
 
@@ -80,7 +80,7 @@ namespace ClaudeAgent
                 var unknownParamWarning = GetUnknownParameterWarning(jsonCommand);
                 if (unknownParamWarning != null)
                 {
-                    Debug.LogWarning($"[CommandExecutor] {unknownParamWarning}");
+                    ConsoleLogWarning($"[CommandExecutor] {unknownParamWarning}");
                 }
 
                 var command = JsonUtility.FromJson<Command>(jsonCommand);
@@ -88,14 +88,14 @@ namespace ClaudeAgent
                 if (command == null || string.IsNullOrEmpty(command.operation))
                 {
                     string error = "Invalid command format";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 // JsonUtility doesn't support object type, manually parse special fields
                 ParseSpecialFields(jsonCommand, command.@params);
 
-                Debug.Log($"[CommandExecutor] Executing command: {command.operation}");
+                ConsoleLog($"[CommandExecutor] Executing command: {command.operation}");
 
                 // Initialize commands on first execution
                 if (_commands == null)
@@ -114,7 +114,7 @@ namespace ClaudeAgent
                 else
                 {
                     string unknownOpError = $"Unknown operation: {command.operation}";
-                    Debug.LogWarning($"[CommandExecutor] {unknownOpError}");
+                    ConsoleLogWarning($"[CommandExecutor] {unknownOpError}");
                     return (false, unknownOpError);
                 }
 
@@ -129,7 +129,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error executing command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -165,7 +165,7 @@ namespace ClaudeAgent
         /// </summary>
         private (bool, string) Error(string message)
         {
-            Debug.LogError($"[CommandExecutor] {message}");
+            ConsoleLogError($"[CommandExecutor] {message}");
             return (false, message);
         }
 
@@ -174,7 +174,7 @@ namespace ClaudeAgent
         /// </summary>
         private (bool, string) Warning(string message)
         {
-            Debug.LogWarning($"[CommandExecutor] {message}");
+            ConsoleLogWarning($"[CommandExecutor] {message}");
             return (false, message);
         }
 
@@ -343,7 +343,7 @@ namespace ClaudeAgent
                             p.default_value = defaultValueToken.ToObject<string>();
                             break;
                     }
-                    Debug.Log($"[CommandExecutor] Parsed default_value: {p.default_value} (type: {p.default_value?.GetType().Name})");
+                    ConsoleLog($"[CommandExecutor] Parsed default_value: {p.default_value} (type: {p.default_value?.GetType().Name})");
                 }
 
                 // Parse children (object[] type)
@@ -355,7 +355,7 @@ namespace ClaudeAgent
                     {
                         p.children[i] = childrenToken[i]; // Keep as JObject
                     }
-                    Debug.Log($"[CommandExecutor] Parsed children: {p.children.Length} items");
+                    ConsoleLog($"[CommandExecutor] Parsed children: {p.children.Length} items");
                 }
 
                 // Parse conditions (object[] type)
@@ -367,7 +367,7 @@ namespace ClaudeAgent
                     {
                         p.conditions[i] = conditionsToken[i]; // Keep as JObject
                     }
-                    Debug.Log($"[CommandExecutor] Parsed conditions: {p.conditions.Length} items");
+                    ConsoleLog($"[CommandExecutor] Parsed conditions: {p.conditions.Length} items");
                 }
 
                 // Parse start (object type: coordinate array or GameObject path)
@@ -403,7 +403,7 @@ namespace ClaudeAgent
                 if (verticesToken != null && verticesToken.Type == JTokenType.Array)
                 {
                     p.vertices = verticesToken as JArray;
-                    Debug.Log($"[CommandExecutor] Parsed vertices: {((JArray)p.vertices).Count} points");
+                    ConsoleLog($"[CommandExecutor] Parsed vertices: {((JArray)p.vertices).Count} points");
                 }
 
                 // Parse value (can be array, object, or primitive - convert to string for parsing)
@@ -430,7 +430,7 @@ namespace ClaudeAgent
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[CommandExecutor] Error parsing special fields: {e.Message}");
+                ConsoleLogWarning($"[CommandExecutor] Error parsing special fields: {e.Message}");
             }
         }
 

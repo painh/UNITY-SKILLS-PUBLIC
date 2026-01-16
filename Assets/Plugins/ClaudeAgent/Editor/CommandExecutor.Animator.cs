@@ -32,7 +32,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -40,7 +40,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -48,7 +48,7 @@ namespace ClaudeAgent
                 if (animator == null)
                 {
                     string error = $"Animator component not found on: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -62,7 +62,7 @@ namespace ClaudeAgent
                     if (hasParameter)
                     {
                         string error = "Cannot specify both 'get' and 'parameter'";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -73,7 +73,7 @@ namespace ClaudeAgent
                 if (!hasParameter)
                 {
                     string error = "Must specify 'parameter' or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -91,7 +91,7 @@ namespace ClaudeAgent
                 if (animatorController == null)
                 {
                     string error = "No AnimatorController found";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -109,7 +109,7 @@ namespace ClaudeAgent
                 if (foundParam == null)
                 {
                     string error = $"Parameter not found: {p.parameter}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -141,17 +141,17 @@ namespace ClaudeAgent
 
                     default:
                         string error = $"Unknown parameter type: {foundParam.type}";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                 }
 
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error in animator command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -315,7 +315,7 @@ namespace ClaudeAgent
             }
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved Animator info for: {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved Animator info for: {obj.name}");
             return (true, result);
         }
 
@@ -363,13 +363,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Created AnimatorController: {p.name} at {assetPath}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating AnimatorController: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -418,7 +418,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error creating animator element: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -465,7 +465,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error deleting animator element: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -506,7 +506,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error in animator_element: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -559,7 +559,7 @@ namespace ClaudeAgent
                 }
                 else
                 {
-                    Debug.LogWarning($"[CommandExecutor] Animation clip not found: {p.motion}");
+                    ConsoleLogWarning($"[CommandExecutor] Animation clip not found: {p.motion}");
                 }
             }
 
@@ -579,7 +579,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Created state '{p.name}' in layer {layerIndex}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -635,7 +635,7 @@ namespace ClaudeAgent
                 }
                 else
                 {
-                    Debug.LogWarning($"[CommandExecutor] AvatarMask not found: {p.avatar_mask}");
+                    ConsoleLogWarning($"[CommandExecutor] AvatarMask not found: {p.avatar_mask}");
                 }
             }
 
@@ -651,7 +651,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Created layer '{p.name}'";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -707,7 +707,7 @@ namespace ClaudeAgent
             // Set default value
             if (p.default_value != null && paramType != AnimatorControllerParameterType.Trigger)
             {
-                Debug.Log($"[CommandExecutor] Setting default_value: {p.default_value} (type: {p.default_value.GetType()})");
+                ConsoleLog($"[CommandExecutor] Setting default_value: {p.default_value} (type: {p.default_value.GetType()})");
 
                 switch (paramType)
                 {
@@ -715,19 +715,19 @@ namespace ClaudeAgent
                         float floatVal = Convert.ToSingle(p.default_value);
                         newParam.defaultFloat = floatVal;
                         defaultValueInfo = $" (default: {floatVal})";
-                        Debug.Log($"[CommandExecutor] Set defaultFloat = {floatVal}");
+                        ConsoleLog($"[CommandExecutor] Set defaultFloat = {floatVal}");
                         break;
                     case AnimatorControllerParameterType.Int:
                         int intVal = Convert.ToInt32(p.default_value);
                         newParam.defaultInt = intVal;
                         defaultValueInfo = $" (default: {intVal})";
-                        Debug.Log($"[CommandExecutor] Set defaultInt = {intVal}");
+                        ConsoleLog($"[CommandExecutor] Set defaultInt = {intVal}");
                         break;
                     case AnimatorControllerParameterType.Bool:
                         bool boolVal = Convert.ToBoolean(p.default_value);
                         newParam.defaultBool = boolVal;
                         defaultValueInfo = $" (default: {boolVal})";
-                        Debug.Log($"[CommandExecutor] Set defaultBool = {boolVal}");
+                        ConsoleLog($"[CommandExecutor] Set defaultBool = {boolVal}");
                         break;
                 }
             }
@@ -741,7 +741,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Created parameter '{p.name}' of type {paramType}{defaultValueInfo}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -816,7 +816,7 @@ namespace ClaudeAgent
                 EditorUtility.SetDirty(controller);
                 AssetDatabase.SaveAssets();
                 string entryResult = $"Created entry transition to '{p.to_state}' in layer {layerIndex}";
-                Debug.Log($"[CommandExecutor] {entryResult}");
+                ConsoleLog($"[CommandExecutor] {entryResult}");
                 return (true, entryResult);
             }
             else
@@ -890,7 +890,7 @@ namespace ClaudeAgent
                     }
                     catch (Exception e)
                     {
-                        Debug.LogWarning($"[CommandExecutor] Failed to parse condition: {e.Message}");
+                        ConsoleLogWarning($"[CommandExecutor] Failed to parse condition: {e.Message}");
                     }
                 }
             }
@@ -900,7 +900,7 @@ namespace ClaudeAgent
 
             string fromName = isFromAnyState ? "Any State" : p.from_state;
             string result = $"Created transition from '{fromName}' to '{p.to_state}' in layer {layerIndex}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -997,14 +997,14 @@ namespace ClaudeAgent
             int addedChildren = 0;
             if (p.children != null && p.children.Length > 0)
             {
-                Debug.Log($"[CommandExecutor] Processing {p.children.Length} children for BlendTree");
+                ConsoleLog($"[CommandExecutor] Processing {p.children.Length} children for BlendTree");
                 bool is2D = blendTree.blendType != BlendTreeType.Simple1D && blendTree.blendType != BlendTreeType.Direct;
 
                 foreach (var childObj in p.children)
                 {
                     try
                     {
-                        Debug.Log($"[CommandExecutor] Child object type: {childObj?.GetType().Name ?? "null"}");
+                        ConsoleLog($"[CommandExecutor] Child object type: {childObj?.GetType().Name ?? "null"}");
                         var childDict = childObj as Dictionary<string, object>;
                         if (childDict == null)
                         {
@@ -1012,14 +1012,14 @@ namespace ClaudeAgent
                             if (jObj != null)
                             {
                                 childDict = jObj.ToObject<Dictionary<string, object>>();
-                                Debug.Log($"[CommandExecutor] Converted JObject to Dictionary");
+                                ConsoleLog($"[CommandExecutor] Converted JObject to Dictionary");
                             }
                         }
 
                         if (childDict != null)
                         {
                             string motionPath = childDict.ContainsKey("motion") ? childDict["motion"].ToString() : "";
-                            Debug.Log($"[CommandExecutor] Motion path: {motionPath}");
+                            ConsoleLog($"[CommandExecutor] Motion path: {motionPath}");
 
                             if (!string.IsNullOrEmpty(motionPath))
                             {
@@ -1031,35 +1031,35 @@ namespace ClaudeAgent
                                         // 2D BlendTree: use position [x, y]
                                         Vector2 pos = ParseVector2FromChild(childDict, "position");
                                         blendTree.AddChild(clip, pos);
-                                        Debug.Log($"[CommandExecutor] Added 2D child: {clip.name} at ({pos.x}, {pos.y})");
+                                        ConsoleLog($"[CommandExecutor] Added 2D child: {clip.name} at ({pos.x}, {pos.y})");
                                     }
                                     else
                                     {
                                         // 1D BlendTree: use threshold
                                         float thresholdVal = childDict.ContainsKey("threshold") ? Convert.ToSingle(childDict["threshold"]) : 0f;
                                         blendTree.AddChild(clip, thresholdVal);
-                                        Debug.Log($"[CommandExecutor] Added 1D child: {clip.name} at threshold {thresholdVal}");
+                                        ConsoleLog($"[CommandExecutor] Added 1D child: {clip.name} at threshold {thresholdVal}");
                                     }
                                     addedChildren++;
                                 }
                                 else
                                 {
-                                    Debug.LogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
+                                    ConsoleLogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
                                 }
                             }
                         }
                         else
                         {
-                            Debug.LogWarning($"[CommandExecutor] Could not parse child as Dictionary");
+                            ConsoleLogWarning($"[CommandExecutor] Could not parse child as Dictionary");
                         }
                     }
                     catch (Exception e)
                     {
-                        Debug.LogWarning($"[CommandExecutor] Failed to parse child: {e.Message}\n{e.StackTrace}");
+                        ConsoleLogWarning($"[CommandExecutor] Failed to parse child: {e.Message}\n{e.StackTrace}");
                     }
                 }
 
-                Debug.Log($"[CommandExecutor] BlendTree children count after adding: {blendTree.children.Length}");
+                ConsoleLog($"[CommandExecutor] BlendTree children count after adding: {blendTree.children.Length}");
             }
 
             // Mark both BlendTree and Controller as dirty
@@ -1068,7 +1068,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Created BlendTree '{p.name}' with parameter '{p.parameter}' in layer {layerIndex} (children: {addedChildren})";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -1079,32 +1079,32 @@ namespace ClaudeAgent
         /// </summary>
         private AnimationClip LoadAnimationClip(string motionPath)
         {
-            Debug.Log($"[CommandExecutor] LoadAnimationClip: {motionPath}");
+            ConsoleLog($"[CommandExecutor] LoadAnimationClip: {motionPath}");
 
             // First try direct load (.anim file)
             var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(motionPath);
             if (clip != null)
             {
-                Debug.Log($"[CommandExecutor] Loaded directly: {clip.name}");
+                ConsoleLog($"[CommandExecutor] Loaded directly: {clip.name}");
                 return clip;
             }
 
             // Search for embedded clips from model files like FBX
             string extension = System.IO.Path.GetExtension(motionPath).ToLower();
-            Debug.Log($"[CommandExecutor] Extension: '{extension}'");
+            ConsoleLog($"[CommandExecutor] Extension: '{extension}'");
 
             if (extension == ".fbx" || extension == ".dae" || extension == ".obj")
             {
                 // Extract clip name from path (Assets/Models/Char.fbx/Walk -> Walk)
                 // or load all clips
                 var allAssets = AssetDatabase.LoadAllAssetsAtPath(motionPath);
-                Debug.Log($"[CommandExecutor] LoadAllAssetsAtPath returned {allAssets?.Length ?? 0} assets");
+                ConsoleLog($"[CommandExecutor] LoadAllAssetsAtPath returned {allAssets?.Length ?? 0} assets");
                 foreach (var asset in allAssets)
                 {
-                    Debug.Log($"[CommandExecutor]   Asset: {asset?.name} ({asset?.GetType().Name})");
+                    ConsoleLog($"[CommandExecutor]   Asset: {asset?.name} ({asset?.GetType().Name})");
                     if (asset is AnimationClip animClip && !animClip.name.StartsWith("__preview__"))
                     {
-                        Debug.Log($"[CommandExecutor] Found clip in FBX: {animClip.name}");
+                        ConsoleLog($"[CommandExecutor] Found clip in FBX: {animClip.name}");
                         return animClip; // Return first found clip
                     }
                 }
@@ -1117,27 +1117,27 @@ namespace ClaudeAgent
             {
                 string parentPath = motionPath.Substring(0, lastSlashIndex);
                 string clipName = motionPath.Substring(lastSlashIndex + 1);
-                Debug.Log($"[CommandExecutor] Trying parent path: {parentPath}, clip name: {clipName}");
+                ConsoleLog($"[CommandExecutor] Trying parent path: {parentPath}, clip name: {clipName}");
 
                 // Check if parent path is an FBX or similar file
                 string parentExtension = System.IO.Path.GetExtension(parentPath).ToLower();
                 if (parentExtension == ".fbx" || parentExtension == ".dae" || parentExtension == ".obj")
                 {
                     var allAssets = AssetDatabase.LoadAllAssetsAtPath(parentPath);
-                    Debug.Log($"[CommandExecutor] LoadAllAssetsAtPath (parent) returned {allAssets?.Length ?? 0} assets");
+                    ConsoleLog($"[CommandExecutor] LoadAllAssetsAtPath (parent) returned {allAssets?.Length ?? 0} assets");
                     foreach (var asset in allAssets)
                     {
-                        Debug.Log($"[CommandExecutor]   Asset: {asset?.name} ({asset?.GetType().Name})");
+                        ConsoleLog($"[CommandExecutor]   Asset: {asset?.name} ({asset?.GetType().Name})");
                         if (asset is AnimationClip animClip && animClip.name == clipName)
                         {
-                            Debug.Log($"[CommandExecutor] Found clip by name: {animClip.name}");
+                            ConsoleLog($"[CommandExecutor] Found clip by name: {animClip.name}");
                             return animClip;
                         }
                     }
                 }
             }
 
-            Debug.LogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
+            ConsoleLogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
             return null;
         }
 
@@ -1218,7 +1218,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Deleted state '{p.name}' from layer {layerIndex}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -1258,7 +1258,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Deleted layer '{p.name}'";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -1292,7 +1292,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Deleted parameter '{p.name}'";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -1330,7 +1330,7 @@ namespace ClaudeAgent
                         EditorUtility.SetDirty(controller);
                         AssetDatabase.SaveAssets();
                         string result = $"Deleted transition from Any State to '{p.to_state}' in layer {layerIndex}";
-                        Debug.Log($"[CommandExecutor] {result}");
+                        ConsoleLog($"[CommandExecutor] {result}");
                         return (true, result);
                     }
                 }
@@ -1362,7 +1362,7 @@ namespace ClaudeAgent
                         EditorUtility.SetDirty(controller);
                         AssetDatabase.SaveAssets();
                         string result = $"Deleted transition from '{p.from_state}' to '{p.to_state}' in layer {layerIndex}";
-                        Debug.Log($"[CommandExecutor] {result}");
+                        ConsoleLog($"[CommandExecutor] {result}");
                         return (true, result);
                     }
                 }
@@ -1632,7 +1632,7 @@ namespace ClaudeAgent
                         }
                         else
                         {
-                            Debug.LogWarning($"[CommandExecutor] Animation clip not found: {p.motion}");
+                            ConsoleLogWarning($"[CommandExecutor] Animation clip not found: {p.motion}");
                         }
                     }
 
@@ -1647,7 +1647,7 @@ namespace ClaudeAgent
                     AssetDatabase.SaveAssets();
 
                     string result = $"Updated state '{p.name}': {string.Join(", ", changes)}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
             }
@@ -1697,7 +1697,7 @@ namespace ClaudeAgent
                     AssetDatabase.SaveAssets();
 
                     string result = $"Updated layer '{p.name}': {string.Join(", ", changes)}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
             }
@@ -1775,7 +1775,7 @@ namespace ClaudeAgent
             AssetDatabase.SaveAssets();
 
             string result = $"Updated parameter '{p.name}': {changeInfo}";
-            Debug.Log($"[CommandExecutor] {result}");
+            ConsoleLog($"[CommandExecutor] {result}");
             return (true, result);
         }
 
@@ -1903,14 +1903,14 @@ namespace ClaudeAgent
                                         }
                                         else
                                         {
-                                            Debug.LogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
+                                            ConsoleLogWarning($"[CommandExecutor] Animation clip not found: {motionPath}");
                                         }
                                     }
                                 }
                             }
                             catch (Exception e)
                             {
-                                Debug.LogWarning($"[CommandExecutor] Failed to parse child: {e.Message}");
+                                ConsoleLogWarning($"[CommandExecutor] Failed to parse child: {e.Message}");
                             }
                         }
                         changes.Add($"children={addedCount} items added");
@@ -1922,7 +1922,7 @@ namespace ClaudeAgent
                     AssetDatabase.SaveAssets();
 
                     string result = $"Updated BlendTree '{p.name}': {string.Join(", ", changes)}";
-                    Debug.Log($"[CommandExecutor] {result}");
+                    ConsoleLog($"[CommandExecutor] {result}");
                     return (true, result);
                 }
             }

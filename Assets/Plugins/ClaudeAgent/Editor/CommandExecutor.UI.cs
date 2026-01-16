@@ -29,7 +29,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path))
                 {
                     string error = "Missing required parameter: path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -37,7 +37,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -55,7 +55,7 @@ namespace ClaudeAgent
                     if (hasAnySetParam)
                     {
                         string error = "Cannot specify both 'get' and property values (text, color, font_size, size)";
-                        Debug.LogError($"[CommandExecutor] {error}");
+                        ConsoleLogError($"[CommandExecutor] {error}");
                         return (false, error);
                     }
 
@@ -66,7 +66,7 @@ namespace ClaudeAgent
                 if (!hasAnySetParam)
                 {
                     string error = "At least one property must be specified (text, color, font_size, or size), or use 'get: true' for retrieval";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -129,7 +129,7 @@ namespace ClaudeAgent
                     var (colorSuccess, parsedColor, colorError) = TryParseColor(p.color);
                     if (!colorSuccess)
                     {
-                        Debug.LogError($"[CommandExecutor] {colorError}");
+                        ConsoleLogError($"[CommandExecutor] {colorError}");
                         return (false, colorError);
                     }
 
@@ -165,27 +165,27 @@ namespace ClaudeAgent
                     }
                     else
                     {
-                        Debug.LogWarning($"[CommandExecutor] RectTransform not found on {obj.name}, size not changed");
+                        ConsoleLogWarning($"[CommandExecutor] RectTransform not found on {obj.name}, size not changed");
                     }
                 }
 
                 if (results.Count == 0)
                 {
                     string error = "No modifiable UI components found (Text/Image/RectTransform)";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 EditorUtility.SetDirty(obj);
 
                 string result = $"Set {obj.name} UI: {string.Join(", ", results)}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error in ui command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -256,7 +256,7 @@ namespace ClaudeAgent
             }
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved UI info for {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved UI info for {obj.name}");
             return (true, result);
         }
 
@@ -274,7 +274,7 @@ namespace ClaudeAgent
                 string duplicateError = CheckDuplicateRootName(desiredName);
                 if (duplicateError != null)
                 {
-                    Debug.LogError($"[CommandExecutor] {duplicateError}");
+                    ConsoleLogError($"[CommandExecutor] {duplicateError}");
                     return (false, duplicateError);
                 }
 
@@ -284,7 +284,7 @@ namespace ClaudeAgent
                     string eventSystemError = CheckDuplicateRootName("EventSystem");
                     if (eventSystemError != null)
                     {
-                        Debug.LogError($"[CommandExecutor] {eventSystemError}");
+                        ConsoleLogError($"[CommandExecutor] {eventSystemError}");
                         return (false, eventSystemError);
                     }
                 }
@@ -327,13 +327,13 @@ namespace ClaudeAgent
                 Undo.RegisterCreatedObjectUndo(canvasObj, "Create Canvas");
 
                 string result = $"Created Canvas: {canvasObj.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating canvas: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -348,7 +348,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.type))
                 {
                     string error = "Missing required parameter: type";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -360,7 +360,7 @@ namespace ClaudeAgent
                     if (parentObj == null)
                     {
                         string error = parentFindError ?? $"Parent object not found: {p.parent}";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                     parent = parentObj;
@@ -376,7 +376,7 @@ namespace ClaudeAgent
                     else
                     {
                         string error = "No Canvas found in scene. Create a Canvas first.";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                     }
                 }
@@ -409,7 +409,7 @@ namespace ClaudeAgent
                         break;
                     default:
                         string error = $"Unknown UI element type: {p.type}. Valid types: button, text, tmpro, image, panel, inputfield, scrollview";
-                        Debug.LogWarning($"[CommandExecutor] {error}");
+                        ConsoleLogWarning($"[CommandExecutor] {error}");
                         return (false, error);
                 }
 
@@ -529,13 +529,13 @@ namespace ClaudeAgent
                 Undo.RegisterCreatedObjectUndo(uiElement, $"Create UI {p.type}");
 
                 string result = $"Created UI element: {uiElement.name} ({p.type})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating UI element: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -838,7 +838,7 @@ namespace ClaudeAgent
                     rectTransform.pivot = new Vector2(0.5f, 0.5f);
                     break;
                 default:
-                    Debug.LogWarning($"[CommandExecutor] Unknown anchor preset: {preset}. Valid values: top-left, top-center, top-right, middle-left, center, middle-right, bottom-left, bottom-center, bottom-right, stretch-top, stretch-middle, stretch-bottom, stretch-left, stretch-center, stretch-right, stretch, stretch-all");
+                    ConsoleLogWarning($"[CommandExecutor] Unknown anchor preset: {preset}. Valid values: top-left, top-center, top-right, middle-left, center, middle-right, bottom-left, bottom-center, bottom-right, stretch-top, stretch-middle, stretch-bottom, stretch-left, stretch-center, stretch-right, stretch, stretch-all");
                     break;
             }
         }

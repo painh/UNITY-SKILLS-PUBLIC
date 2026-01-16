@@ -112,7 +112,7 @@ namespace ClaudeAgent
             }
 
             string result = sb.ToString();
-            Debug.Log($"[CommandExecutor] Retrieved light info for {obj.name}");
+            ConsoleLog($"[CommandExecutor] Retrieved light info for {obj.name}");
             return (true, result);
         }
 

@@ -48,7 +48,7 @@ namespace ClaudeAgent
                                 sb.AppendLine($"  Stack Trace: {log.stackTrace}");
                             }
                         }
-                        Debug.Log($"[CommandExecutor] Retrieved {errors.Count} error logs");
+                        ConsoleLog($"[CommandExecutor] Retrieved {errors.Count} error logs");
                         break;
 
                     case "statistics":
@@ -75,7 +75,7 @@ namespace ClaudeAgent
                         {
                             sb.AppendLine(log.ToString());
                         }
-                        Debug.Log($"[CommandExecutor] Retrieved {logs.Count} console logs");
+                        ConsoleLog($"[CommandExecutor] Retrieved {logs.Count} console logs");
                         break;
                 }
 
@@ -84,7 +84,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error in logs command: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -104,7 +104,7 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error clearing console logs: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }

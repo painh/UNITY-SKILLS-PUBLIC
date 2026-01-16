@@ -48,7 +48,7 @@ namespace ClaudeAgent
                     }));
                 }
 
-                Debug.Log($"[CommandExecutor] Executing batch with {commandsArray.Count} commands");
+                ConsoleLog($"[CommandExecutor] Executing batch with {commandsArray.Count} commands");
 
                 // Start Undo group
                 Undo.IncrementCurrentGroup();
@@ -131,14 +131,14 @@ namespace ClaudeAgent
                 };
 
                 string responseJson = JsonConvert.SerializeObject(response);
-                Debug.Log($"[CommandExecutor] Batch completed: {succeeded} succeeded, {failed} failed, {cancelled} cancelled");
+                ConsoleLog($"[CommandExecutor] Batch completed: {succeeded} succeeded, {failed} failed, {cancelled} cancelled");
 
                 return (!hasError, responseJson);
             }
             catch (Exception e)
             {
                 string error = $"Error executing batch: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
 
                 var errorResponse = new
                 {

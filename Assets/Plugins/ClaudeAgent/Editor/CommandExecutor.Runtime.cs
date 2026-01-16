@@ -72,12 +72,12 @@ namespace ClaudeAgent
                     {
                         compilerService.ReferenceAssemblies.Add(AssemblyReference.FromAssembly(asm));
                         addedAssemblies.Add(name);
-                        Debug.Log($"[CommandExecutor] Added assembly reference: {name}");
+                        ConsoleLog($"[CommandExecutor] Added assembly reference: {name}");
                     }
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[CommandExecutor] Failed to add assembly reference: {e.Message}");
+                    ConsoleLogWarning($"[CommandExecutor] Failed to add assembly reference: {e.Message}");
                 }
             }
         }
@@ -168,7 +168,7 @@ namespace ClaudeAgent
                     sb.AppendLine($"Return value: {result}");
                 }
 
-                Debug.Log($"[CommandExecutor] {sb}");
+                ConsoleLog($"[CommandExecutor] {sb}");
                 return Success(sb.ToString().TrimEnd());
             }
             catch (Exception e)
@@ -286,7 +286,7 @@ namespace ClaudeAgent
                 }
 
                 string result = $"Attached {behaviourType.Name} to {targetObj.name}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return Success(result);
             }
             catch (Exception e)
@@ -370,7 +370,7 @@ namespace ClaudeAgent
                     sb.AppendLine($"Return value: {result}");
                 }
 
-                Debug.Log($"[CommandExecutor] {sb}");
+                ConsoleLog($"[CommandExecutor] {sb}");
                 return Success(sb.ToString().TrimEnd());
             }
             catch (Exception e)
@@ -425,7 +425,7 @@ namespace ClaudeAgent
                 animator.Play(p.state, layer, normalizedTime);
 
                 string result = $"Playing '{p.state}' on {p.target} (layer {layer})";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return Success(result);
             }
             catch (Exception e)

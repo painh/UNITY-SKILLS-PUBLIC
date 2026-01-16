@@ -34,7 +34,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.asset_path))
                 {
                     string error = "Missing required parameter: asset_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -58,7 +58,7 @@ namespace ClaudeAgent
                 {
                     // Other asset types are not supported
                     string error = $"Unsupported asset type: {extension}. Only .txt, .json, .xml, .md are supported for create_asset.";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -66,13 +66,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Created asset at: {p.asset_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating asset: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -87,7 +87,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.asset_path))
                 {
                     string error = "Missing required parameter: asset_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -95,7 +95,7 @@ namespace ClaudeAgent
                 if (!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(p.asset_path))
                 {
                     string error = $"Asset not found: {p.asset_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -103,7 +103,7 @@ namespace ClaudeAgent
                 if (!AssetDatabase.DeleteAsset(p.asset_path))
                 {
                     string error = $"Failed to delete asset: {p.asset_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -111,13 +111,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Deleted asset: {p.asset_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error deleting asset: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -132,7 +132,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.asset_path))
                 {
                     string error = "Missing required parameter: asset_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -141,7 +141,7 @@ namespace ClaudeAgent
                 if (asset == null)
                 {
                     string error = $"Asset not found: {p.asset_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -163,13 +163,13 @@ namespace ClaudeAgent
                 }
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Retrieved asset info for: {p.asset_path}");
+                ConsoleLog($"[CommandExecutor] Retrieved asset info for: {p.asset_path}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error getting asset info: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -184,7 +184,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.asset_path))
                 {
                     string error = "Missing required parameter: asset_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -192,13 +192,13 @@ namespace ClaudeAgent
                 AssetDatabase.ImportAsset(p.asset_path, ImportAssetOptions.ForceUpdate);
 
                 string result = $"Imported asset: {p.asset_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error importing asset: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -213,13 +213,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = "AssetDatabase refreshed successfully";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error refreshing assets: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -234,7 +234,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.from_path) || string.IsNullOrEmpty(p.to_path))
                 {
                     string error = "Missing required parameters: from_path and to_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -242,7 +242,7 @@ namespace ClaudeAgent
                 if (!AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(p.from_path))
                 {
                     string error = $"Source asset not found: {p.from_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -253,7 +253,7 @@ namespace ClaudeAgent
                 if (!AssetDatabase.CopyAsset(p.from_path, p.to_path))
                 {
                     string error = $"Failed to copy asset from {p.from_path} to {p.to_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -261,13 +261,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Copied asset from {p.from_path} to {p.to_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error copying asset: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -282,7 +282,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.package_path))
                 {
                     string error = "Missing required parameter: package_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -300,7 +300,7 @@ namespace ClaudeAgent
                 if (!System.IO.File.Exists(fullPath))
                 {
                     string error = $"Package file not found: {fullPath}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -308,7 +308,7 @@ namespace ClaudeAgent
                 if (!fullPath.EndsWith(".unitypackage", StringComparison.OrdinalIgnoreCase))
                 {
                     string error = $"Invalid file type. Expected .unitypackage: {fullPath}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -317,13 +317,13 @@ namespace ClaudeAgent
                 AssetDatabase.Refresh();
 
                 string result = $"Imported package: {System.IO.Path.GetFileName(fullPath)}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error importing package: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -343,7 +343,7 @@ namespace ClaudeAgent
                 if (!System.IO.Directory.Exists(fullPath))
                 {
                     string error = $"Folder not found: {folderPath}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -418,13 +418,13 @@ namespace ClaudeAgent
                 sb.AppendLine($"Total: {count} items");
 
                 string result = sb.ToString();
-                Debug.Log($"[CommandExecutor] Listed {count} assets in {folderPath}");
+                ConsoleLog($"[CommandExecutor] Listed {count} assets in {folderPath}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error listing assets: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }

@@ -30,7 +30,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.path) || string.IsNullOrEmpty(p.prefab_path))
                 {
                     string error = "Missing required parameters: path and prefab_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -39,7 +39,7 @@ namespace ClaudeAgent
                 if (obj == null)
                 {
                     string error = findError ?? $"GameObject not found: {p.path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -51,18 +51,18 @@ namespace ClaudeAgent
                 if (prefab == null)
                 {
                     string error = $"Failed to create prefab at: {p.prefab_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 string result = $"Created prefab from {obj.name} at: {p.prefab_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error creating prefab: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -77,7 +77,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.prefab_path))
                 {
                     string error = "Missing required parameter: prefab_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -89,7 +89,7 @@ namespace ClaudeAgent
                 var (posValid, posError) = ValidateSpaceParameter("position", p.position, ref posSpace, defaultSpace);
                 if (!posValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {posError}");
+                    ConsoleLogError($"[CommandExecutor] {posError}");
                     return (false, posError);
                 }
 
@@ -97,7 +97,7 @@ namespace ClaudeAgent
                 var (rotValid, rotError) = ValidateSpaceParameter("rotation", p.rotation, ref rotSpace, defaultSpace);
                 if (!rotValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {rotError}");
+                    ConsoleLogError($"[CommandExecutor] {rotError}");
                     return (false, rotError);
                 }
 
@@ -105,7 +105,7 @@ namespace ClaudeAgent
                 var (scaleValid, scaleError) = ValidateSpaceParameter("scale", p.scale, ref scaleSpace, defaultSpace);
                 if (!scaleValid)
                 {
-                    Debug.LogError($"[CommandExecutor] {scaleError}");
+                    ConsoleLogError($"[CommandExecutor] {scaleError}");
                     return (false, scaleError);
                 }
 
@@ -114,7 +114,7 @@ namespace ClaudeAgent
                 if (prefab == null)
                 {
                     string error = $"Prefab not found: {p.prefab_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -130,7 +130,7 @@ namespace ClaudeAgent
                     else if (parentFindError != null)
                     {
                         // Return duplicate error as is
-                        Debug.LogWarning($"[CommandExecutor] {parentFindError}");
+                        ConsoleLogWarning($"[CommandExecutor] {parentFindError}");
                         return (false, parentFindError);
                     }
                 }
@@ -142,7 +142,7 @@ namespace ClaudeAgent
                     string duplicateError = CheckDuplicateRootName(desiredName);
                     if (duplicateError != null)
                     {
-                        Debug.LogError($"[CommandExecutor] {duplicateError}");
+                        ConsoleLogError($"[CommandExecutor] {duplicateError}");
                         return (false, duplicateError);
                     }
                 }
@@ -152,7 +152,7 @@ namespace ClaudeAgent
                 if (instance == null)
                 {
                     string error = $"Failed to instantiate prefab: {p.prefab_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -221,13 +221,13 @@ namespace ClaudeAgent
                 {
                     result += $" ({string.Join(", ", spaceInfo)})";
                 }
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error instantiating prefab: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -242,7 +242,7 @@ namespace ClaudeAgent
                 if (p == null || string.IsNullOrEmpty(p.prefab_path))
                 {
                     string error = "Missing required parameter: prefab_path";
-                    Debug.LogError($"[CommandExecutor] {error}");
+                    ConsoleLogError($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -251,7 +251,7 @@ namespace ClaudeAgent
                 if (prefab == null)
                 {
                     string error = $"Prefab not found: {p.prefab_path}";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -260,13 +260,13 @@ namespace ClaudeAgent
                 PrefabStageUtility.OpenPrefab(assetPath);
 
                 string result = $"Opened prefab in edit mode: {p.prefab_path}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error opening prefab: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
@@ -283,7 +283,7 @@ namespace ClaudeAgent
                 if (prefabStage == null)
                 {
                     string error = "No prefab is currently open in Prefab Mode";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
@@ -292,18 +292,18 @@ namespace ClaudeAgent
                 if (!saved)
                 {
                     string error = "Failed to save prefab";
-                    Debug.LogWarning($"[CommandExecutor] {error}");
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
                     return (false, error);
                 }
 
                 string result = $"Saved prefab: {prefabStage.assetPath}";
-                Debug.Log($"[CommandExecutor] {result}");
+                ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error saving prefab: {e.Message}";
-                Debug.LogError($"[CommandExecutor] {error}");
+                ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
         }
