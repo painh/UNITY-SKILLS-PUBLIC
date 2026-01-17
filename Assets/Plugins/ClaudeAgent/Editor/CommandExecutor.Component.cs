@@ -514,7 +514,8 @@ namespace ClaudeAgent
         {
             if (string.IsNullOrWhiteSpace(entry)) return;
             var list = GetCustomBlacklist();
-            if (!list.Contains(entry, StringComparer.OrdinalIgnoreCase))
+            bool exists = list.Exists(e => e.Equals(entry, StringComparison.OrdinalIgnoreCase));
+            if (!exists)
             {
                 list.Add(entry);
                 SaveCustomBlacklist(list);
