@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.7";
+        public const string CurrentVersion = "0.0.8";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -605,6 +605,8 @@ namespace ClaudeAgent
         private string portInputText = "";
         private bool showPortSettings = false;
         private bool showFeaturePermissions = false;
+        private bool showPropertyBlacklist = false;
+        private string newBlacklistEntry = "";
 
         [MenuItem("Tools/Unity Command Server")]
         public static void ShowWindow()
@@ -865,6 +867,84 @@ namespace ClaudeAgent
                 {
                     foreach (var category in CommandExecutor.GetAllCategories())
                         CommandExecutor.SetFeatureEnabled(category, false);
+                }
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Property blacklist section
+            showPropertyBlacklist = EditorGUILayout.Foldout(showPropertyBlacklist, "Property Blacklist", true);
+            if (showPropertyBlacklist)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("Properties to skip when reading components:", EditorStyles.miniLabel);
+                EditorGUILayout.Space(2);
+
+                // Default entries
+                EditorGUILayout.LabelField("Default Properties:", EditorStyles.boldLabel);
+                foreach (var entry in CommandExecutor.GetDefaultPropertyBlacklist())
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    bool isEnabled = CommandExecutor.IsDefaultBlacklistEnabled(entry);
+                    bool newEnabled = EditorGUILayout.ToggleLeft(entry, isEnabled);
+                    if (newEnabled != isEnabled)
+                    {
+                        CommandExecutor.SetDefaultBlacklistEnabled(entry, newEnabled);
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                EditorGUILayout.Space(5);
+
+                // Custom entries
+                var customEntries = CommandExecutor.GetCustomBlacklist();
+                if (customEntries.Count > 0)
+                {
+                    EditorGUILayout.LabelField("Custom Properties:", EditorStyles.boldLabel);
+                    string entryToRemove = null;
+                    foreach (var entry in customEntries)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField(entry);
+                        if (GUILayout.Button("X", GUILayout.Width(20)))
+                        {
+                            entryToRemove = entry;
+                        }
+                        EditorGUILayout.EndHorizontal();
+                    }
+                    if (entryToRemove != null)
+                    {
+                        CommandExecutor.RemoveCustomBlacklistEntry(entryToRemove);
+                    }
+                    EditorGUILayout.Space(5);
+                }
+
+                // Add new entry
+                EditorGUILayout.LabelField("Add Custom Property:", EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                newBlacklistEntry = EditorGUILayout.TextField(newBlacklistEntry);
+                GUI.enabled = !string.IsNullOrWhiteSpace(newBlacklistEntry);
+                if (GUILayout.Button("Add", GUILayout.Width(50)))
+                {
+                    CommandExecutor.AddCustomBlacklistEntry(newBlacklistEntry);
+                    newBlacklistEntry = "";
+                    GUI.FocusControl(null);
+                }
+                GUI.enabled = true;
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.Space(2);
+
+                // Reset button
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Reset to Defaults", GUILayout.Width(120)))
+                {
+                    CommandExecutor.ResetBlacklistToDefaults();
+                    newBlacklistEntry = "";
                 }
                 EditorGUILayout.EndHorizontal();
 

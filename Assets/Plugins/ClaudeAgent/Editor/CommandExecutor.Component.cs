@@ -467,23 +467,155 @@ namespace ClaudeAgent
             catch { }
         }
 
-        // Properties that can cause Unity to hang when accessed via reflection
-        private static readonly HashSet<string> HeavyPropertyBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        // Default properties that can cause Unity to hang when accessed via reflection
+        private static readonly string[] DefaultPropertyBlacklist = new string[]
         {
-            // TerrainCollider - accessing terrainData can serialize huge terrain data
-            "terrainData",
-            // TerrainCollider - GeometryHolder causes Unity to hang
-            "GeometryHolder",
-            // MeshCollider - sharedMesh can be large
-            "sharedMesh",
-            // Renderer materials (can trigger asset loading)
-            "materials",
-            "sharedMaterials",
-            // Mesh related
-            "mesh",
-            // Animation related (can be heavy)
-            "runtimeAnimatorController",
+            "terrainData",           // TerrainCollider - accessing terrainData can serialize huge terrain data
+            "GeometryHolder",        // TerrainCollider - GeometryHolder causes Unity to hang
+            "sharedMesh",            // MeshCollider - sharedMesh can be large
+            "materials",             // Renderer materials (can trigger asset loading)
+            "sharedMaterials",       // Renderer materials
+            "mesh",                  // Mesh related
+            "runtimeAnimatorController",  // Animation related (can be heavy)
         };
+
+        // EditorPrefs keys for blacklist management
+        private const string PrefKeyCustomBlacklist = "ClaudeAgent_CustomBlacklist";
+        private const string PrefKeyDisabledDefaults = "ClaudeAgent_DisabledDefaultBlacklist";
+
+        /// <summary>
+        /// Get the default property blacklist
+        /// </summary>
+        public static string[] GetDefaultPropertyBlacklist() => DefaultPropertyBlacklist;
+
+        /// <summary>
+        /// Get custom (user-added) blacklist entries
+        /// </summary>
+        public static List<string> GetCustomBlacklist()
+        {
+            string saved = EditorPrefs.GetString(PrefKeyCustomBlacklist, "");
+            if (string.IsNullOrEmpty(saved)) return new List<string>();
+            return new List<string>(saved.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        /// <summary>
+        /// Save custom blacklist entries
+        /// </summary>
+        public static void SaveCustomBlacklist(List<string> entries)
+        {
+            EditorPrefs.SetString(PrefKeyCustomBlacklist, string.Join(",", entries));
+            _activeBlacklistCache = null; // Invalidate cache
+        }
+
+        /// <summary>
+        /// Add a custom blacklist entry
+        /// </summary>
+        public static void AddCustomBlacklistEntry(string entry)
+        {
+            if (string.IsNullOrWhiteSpace(entry)) return;
+            var list = GetCustomBlacklist();
+            if (!list.Contains(entry, StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(entry);
+                SaveCustomBlacklist(list);
+            }
+        }
+
+        /// <summary>
+        /// Remove a custom blacklist entry
+        /// </summary>
+        public static void RemoveCustomBlacklistEntry(string entry)
+        {
+            var list = GetCustomBlacklist();
+            list.RemoveAll(e => e.Equals(entry, StringComparison.OrdinalIgnoreCase));
+            SaveCustomBlacklist(list);
+        }
+
+        /// <summary>
+        /// Get disabled default blacklist entries (user chose to enable these)
+        /// </summary>
+        public static HashSet<string> GetDisabledDefaults()
+        {
+            string saved = EditorPrefs.GetString(PrefKeyDisabledDefaults, "");
+            if (string.IsNullOrEmpty(saved)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            return new HashSet<string>(saved.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries), StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Save disabled default entries
+        /// </summary>
+        private static void SaveDisabledDefaults(HashSet<string> entries)
+        {
+            EditorPrefs.SetString(PrefKeyDisabledDefaults, string.Join(",", entries));
+            _activeBlacklistCache = null; // Invalidate cache
+        }
+
+        /// <summary>
+        /// Check if a default blacklist entry is enabled
+        /// </summary>
+        public static bool IsDefaultBlacklistEnabled(string entry)
+        {
+            return !GetDisabledDefaults().Contains(entry);
+        }
+
+        /// <summary>
+        /// Set whether a default blacklist entry is enabled
+        /// </summary>
+        public static void SetDefaultBlacklistEnabled(string entry, bool enabled)
+        {
+            var disabled = GetDisabledDefaults();
+            if (enabled)
+            {
+                disabled.Remove(entry);
+            }
+            else
+            {
+                disabled.Add(entry);
+            }
+            SaveDisabledDefaults(disabled);
+        }
+
+        // Cache for active blacklist
+        private static HashSet<string> _activeBlacklistCache = null;
+
+        /// <summary>
+        /// Get the active property blacklist (defaults - disabled + custom)
+        /// </summary>
+        public static HashSet<string> GetActivePropertyBlacklist()
+        {
+            if (_activeBlacklistCache != null) return _activeBlacklistCache;
+
+            var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var disabled = GetDisabledDefaults();
+
+            // Add enabled defaults
+            foreach (var entry in DefaultPropertyBlacklist)
+            {
+                if (!disabled.Contains(entry))
+                {
+                    result.Add(entry);
+                }
+            }
+
+            // Add custom entries
+            foreach (var entry in GetCustomBlacklist())
+            {
+                result.Add(entry);
+            }
+
+            _activeBlacklistCache = result;
+            return result;
+        }
+
+        /// <summary>
+        /// Reset blacklist to defaults
+        /// </summary>
+        public static void ResetBlacklistToDefaults()
+        {
+            EditorPrefs.DeleteKey(PrefKeyCustomBlacklist);
+            EditorPrefs.DeleteKey(PrefKeyDisabledDefaults);
+            _activeBlacklistCache = null;
+        }
 
         // Component types that need special handling
         private static readonly HashSet<string> HeavyComponentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -557,9 +689,9 @@ namespace ClaudeAgent
                     if (prop.CanRead)
                     {
                         // Check if this property should be skipped
-                        if (HeavyPropertyBlacklist.Contains(prop.Name))
+                        if (GetActivePropertyBlacklist().Contains(prop.Name))
                         {
-                            sb.AppendLine($"  {prop.Name}: <skipped - heavy property>");
+                            sb.AppendLine($"  {prop.Name}: <skipped - blacklisted property>");
                             skippedCount++;
                             DebugLogToFile($"  SKIP (blacklist): {prop.Name}");
                             continue;
@@ -614,9 +746,9 @@ namespace ClaudeAgent
                     foreach (var field in fields)
                     {
                         // Check if this field should be skipped
-                        if (HeavyPropertyBlacklist.Contains(field.Name))
+                        if (GetActivePropertyBlacklist().Contains(field.Name))
                         {
-                            sb.AppendLine($"  {field.Name}: <skipped - heavy field>");
+                            sb.AppendLine($"  {field.Name}: <skipped - blacklisted field>");
                             continue;
                         }
 
