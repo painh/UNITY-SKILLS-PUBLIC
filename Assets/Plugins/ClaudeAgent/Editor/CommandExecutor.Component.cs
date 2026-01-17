@@ -351,7 +351,9 @@ namespace ClaudeAgent
             {
                 if (!IsFeatureEnabled(category))
                 {
-                    return $"Operation '{operation}' is currently disabled. Enable '{category}' in Command Server settings.";
+                    return $"[PERMISSION DENIED] Operation '{operation}' is disabled by user. " +
+                           $"Please ask the user to enable '{category}' in Unity Menu: Tools > Unity Command Server > Feature Permissions. " +
+                           $"Do NOT retry this operation until the user confirms they have enabled it.";
                 }
             }
             return null; // Allowed
