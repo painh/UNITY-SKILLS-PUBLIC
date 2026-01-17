@@ -282,6 +282,7 @@ namespace ClaudeAgent
             // Prefab Edit
             { "create_prefab", FeatureCategory.PrefabEdit },
             { "save_prefab", FeatureCategory.PrefabEdit },
+            { "close_prefab", FeatureCategory.PrefabEdit },
             { "apply_prefab_overrides", FeatureCategory.PrefabEdit },
 
             // ProBuilder

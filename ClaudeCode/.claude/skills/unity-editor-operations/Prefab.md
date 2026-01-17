@@ -117,3 +117,27 @@ Returns a success message with the saved Prefab path.
 - Uses `PrefabStageUtility.GetCurrentPrefabStage()` to get current stage
 - Uses `PrefabUtility.SaveAsPrefabAsset()` to save changes
 - Returns error if no Prefab is currently being edited
+- After saving, you are still in Prefab Mode. Use `close_prefab` to return to Scene Mode if needed.
+
+### close_prefab
+
+Closes the current Prefab Edit Mode and returns to Scene Mode.
+
+**Parameters:** None
+
+**Example:**
+```json
+{
+  "operation": "close_prefab",
+  "params": {}
+}
+```
+
+**Response Format:**
+Returns a success message indicating the prefab was closed and scene mode is active.
+
+**Note:**
+- Only works when a Prefab is currently open in edit mode
+- Uses `StageUtility.GoToMainStage()` to return to scene
+- Does NOT save changes automatically - use `save_prefab` first if needed
+- Returns error if no Prefab is currently being edited

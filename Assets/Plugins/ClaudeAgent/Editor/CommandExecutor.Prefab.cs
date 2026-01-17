@@ -18,6 +18,7 @@ namespace ClaudeAgent
             RegisterCommand("instantiate_prefab", InstantiatePrefab);
             RegisterCommand("open_prefab", OpenPrefab);
             RegisterCommand("save_prefab", SavePrefab);
+            RegisterCommand("close_prefab", ClosePrefab);
         }
 
         /// <summary>
@@ -296,13 +297,48 @@ namespace ClaudeAgent
                     return (false, error);
                 }
 
-                string result = $"Saved prefab: {prefabStage.assetPath}";
-                ConsoleLog($"[CommandExecutor] {result}");
+                string result = $"Saved prefab: {prefabStage.assetPath}\n" +
+                    "Note: You are still in Prefab Mode. If you need to test other scene operations, " +
+                    "use 'close_prefab' to return to Scene Mode.";
+                ConsoleLog($"[CommandExecutor] Saved prefab: {prefabStage.assetPath}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error saving prefab: {e.Message}";
+                ConsoleLogError($"[CommandExecutor] {error}");
+                return (false, error);
+            }
+        }
+
+        /// <summary>
+        /// Closes the current prefab mode and returns to scene mode
+        /// </summary>
+        private (bool, string) ClosePrefab(CommandParams p)
+        {
+            try
+            {
+                // Get current Prefab Stage
+                var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+                if (prefabStage == null)
+                {
+                    string error = "No prefab is currently open in Prefab Mode";
+                    ConsoleLogWarning($"[CommandExecutor] {error}");
+                    return (false, error);
+                }
+
+                string prefabPath = prefabStage.assetPath;
+
+                // Close the prefab stage and return to scene
+                StageUtility.GoToMainStage();
+
+                string result = $"Closed prefab and returned to Scene Mode (was editing: {prefabPath})";
+                ConsoleLog($"[CommandExecutor] {result}");
+                return (true, result);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error closing prefab: {e.Message}";
                 ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
