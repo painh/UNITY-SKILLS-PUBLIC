@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get tag name
         id: tag
@@ -33,11 +35,17 @@ jobs:
           # Save to file for multiline output
           echo "$COMMITS" > release_notes.txt
 
+      - name: Create unitypackage
+        run: |
+          chmod +x ./scripts/create-unitypackage.sh
+          ./scripts/create-unitypackage.sh Assets/Plugins/ClaudeAgent ClaudeAgent-${{ steps.tag.outputs.tag }}.unitypackage
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           body_path: release_notes.txt
+          files: ClaudeAgent-${{ steps.tag.outputs.tag }}.unitypackage
           draft: false
           prerelease: false
