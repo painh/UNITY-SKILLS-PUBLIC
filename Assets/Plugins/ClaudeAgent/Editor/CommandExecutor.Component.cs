@@ -262,6 +262,7 @@ namespace ClaudeAgent
             // Screenshot
             { "take_screenshot", FeatureCategory.Screenshot },
             { "take_game_screenshot", FeatureCategory.Screenshot },
+            { "capture_scene_view", FeatureCategory.Screenshot },
 
             // Runtime
             { "playmode", FeatureCategory.Runtime },
