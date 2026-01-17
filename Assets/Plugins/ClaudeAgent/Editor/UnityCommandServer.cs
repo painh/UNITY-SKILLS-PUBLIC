@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.6";
+        public const string CurrentVersion = "0.0.7";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -604,6 +604,7 @@ namespace ClaudeAgent
         // Port settings UI
         private string portInputText = "";
         private bool showPortSettings = false;
+        private bool showFeaturePermissions = false;
 
         [MenuItem("Tools/Unity Command Server")]
         public static void ShowWindow()
@@ -829,6 +830,46 @@ namespace ClaudeAgent
             }
             EditorGUILayout.LabelField("(Show command logs in Unity Console)", EditorStyles.miniLabel);
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(5);
+
+            // Feature permissions section
+            showFeaturePermissions = EditorGUILayout.Foldout(showFeaturePermissions, "Feature Permissions", true);
+            if (showFeaturePermissions)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("Enable/disable command categories:", EditorStyles.miniLabel);
+                EditorGUILayout.Space(2);
+
+                foreach (var category in CommandExecutor.GetAllCategories())
+                {
+                    bool currentEnabled = CommandExecutor.IsFeatureEnabled(category);
+                    bool newEnabled = EditorGUILayout.ToggleLeft(
+                        CommandExecutor.GetCategoryDisplayName(category),
+                        currentEnabled
+                    );
+                    if (newEnabled != currentEnabled)
+                    {
+                        CommandExecutor.SetFeatureEnabled(category, newEnabled);
+                    }
+                }
+
+                EditorGUILayout.Space(2);
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Enable All", GUILayout.Width(80)))
+                {
+                    foreach (var category in CommandExecutor.GetAllCategories())
+                        CommandExecutor.SetFeatureEnabled(category, true);
+                }
+                if (GUILayout.Button("Disable All", GUILayout.Width(80)))
+                {
+                    foreach (var category in CommandExecutor.GetAllCategories())
+                        CommandExecutor.SetFeatureEnabled(category, false);
+                }
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.EndVertical();
+            }
 
             EditorGUILayout.Space(5);
 

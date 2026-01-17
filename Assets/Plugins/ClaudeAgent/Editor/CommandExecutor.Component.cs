@@ -234,7 +234,156 @@ namespace ClaudeAgent
             _enableFileLogging = EditorPrefs.GetBool(PrefKeyEnableFileLogging, false);
             _debugLogPath = EditorPrefs.GetString(PrefKeyDebugLogPath, DefaultDebugLogPath);
             _enableConsoleLogging = EditorPrefs.GetBool(PrefKeyEnableConsoleLogging, false);
+            InitializeFeaturePermissions();
         }
+
+        #region Feature Permissions
+
+        /// <summary>
+        /// Feature categories that can be enabled/disabled
+        /// </summary>
+        public enum FeatureCategory
+        {
+            Screenshot,     // take_screenshot, take_game_screenshot
+            Runtime,        // playmode, execute_code
+            SceneEdit,      // save_scene, new_scene, load_scene
+            AssetEdit,      // create_asset, delete_asset, copy_asset, move_asset
+            PrefabEdit,     // create_prefab, save_prefab, apply_prefab_overrides
+            ProBuilder,     // All ProBuilder operations
+            Terrain,        // All Terrain operations
+        }
+
+        private static Dictionary<FeatureCategory, bool> _featurePermissions = new Dictionary<FeatureCategory, bool>();
+        private const string PrefKeyFeaturePrefix = "ClaudeAgent_Feature_";
+
+        // Mapping of operations to feature categories
+        private static readonly Dictionary<string, FeatureCategory> OperationToCategory = new Dictionary<string, FeatureCategory>
+        {
+            // Screenshot
+            { "take_screenshot", FeatureCategory.Screenshot },
+            { "take_game_screenshot", FeatureCategory.Screenshot },
+
+            // Runtime
+            { "playmode", FeatureCategory.Runtime },
+            { "execute_code", FeatureCategory.Runtime },
+
+            // Scene Edit
+            { "save_scene", FeatureCategory.SceneEdit },
+            { "new_scene", FeatureCategory.SceneEdit },
+            { "load_scene", FeatureCategory.SceneEdit },
+
+            // Asset Edit
+            { "create_asset", FeatureCategory.AssetEdit },
+            { "delete_asset", FeatureCategory.AssetEdit },
+            { "copy_asset", FeatureCategory.AssetEdit },
+            { "move_asset", FeatureCategory.AssetEdit },
+
+            // Prefab Edit
+            { "create_prefab", FeatureCategory.PrefabEdit },
+            { "save_prefab", FeatureCategory.PrefabEdit },
+            { "apply_prefab_overrides", FeatureCategory.PrefabEdit },
+
+            // ProBuilder
+            { "create_probuilder_shape", FeatureCategory.ProBuilder },
+            { "extrude_faces", FeatureCategory.ProBuilder },
+            { "merge_objects", FeatureCategory.ProBuilder },
+            { "subdivide_faces", FeatureCategory.ProBuilder },
+            { "set_face_material", FeatureCategory.ProBuilder },
+            { "get_probuilder_info", FeatureCategory.ProBuilder },
+            { "select_faces", FeatureCategory.ProBuilder },
+            { "delete_faces", FeatureCategory.ProBuilder },
+            { "detach_faces", FeatureCategory.ProBuilder },
+            { "flip_normals", FeatureCategory.ProBuilder },
+            { "triangulate_faces", FeatureCategory.ProBuilder },
+            { "conform_normals", FeatureCategory.ProBuilder },
+            { "export_mesh", FeatureCategory.ProBuilder },
+
+            // Terrain
+            { "create_terrain", FeatureCategory.Terrain },
+            { "set_terrain_height", FeatureCategory.Terrain },
+            { "paint_terrain_texture", FeatureCategory.Terrain },
+            { "add_terrain_tree", FeatureCategory.Terrain },
+            { "add_terrain_detail", FeatureCategory.Terrain },
+            { "smooth_terrain", FeatureCategory.Terrain },
+            { "flatten_terrain", FeatureCategory.Terrain },
+            { "get_terrain_info", FeatureCategory.Terrain },
+        };
+
+        /// <summary>
+        /// Initialize feature permissions from EditorPrefs
+        /// </summary>
+        public static void InitializeFeaturePermissions()
+        {
+            _featurePermissions.Clear();
+            foreach (FeatureCategory category in Enum.GetValues(typeof(FeatureCategory)))
+            {
+                // Default: all features enabled
+                bool enabled = EditorPrefs.GetBool(PrefKeyFeaturePrefix + category.ToString(), true);
+                _featurePermissions[category] = enabled;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether a feature category is enabled
+        /// </summary>
+        public static bool IsFeatureEnabled(FeatureCategory category)
+        {
+            if (_featurePermissions.TryGetValue(category, out bool enabled))
+                return enabled;
+            return true; // Default enabled
+        }
+
+        /// <summary>
+        /// Sets whether a feature category is enabled
+        /// </summary>
+        public static void SetFeatureEnabled(FeatureCategory category, bool enabled)
+        {
+            _featurePermissions[category] = enabled;
+            EditorPrefs.SetBool(PrefKeyFeaturePrefix + category.ToString(), enabled);
+        }
+
+        /// <summary>
+        /// Checks if an operation is allowed. Returns null if allowed, error message if not.
+        /// </summary>
+        public static string CheckOperationPermission(string operation)
+        {
+            if (OperationToCategory.TryGetValue(operation, out FeatureCategory category))
+            {
+                if (!IsFeatureEnabled(category))
+                {
+                    return $"Operation '{operation}' is currently disabled. Enable '{category}' in Command Server settings.";
+                }
+            }
+            return null; // Allowed
+        }
+
+        /// <summary>
+        /// Gets all feature categories
+        /// </summary>
+        public static FeatureCategory[] GetAllCategories()
+        {
+            return (FeatureCategory[])Enum.GetValues(typeof(FeatureCategory));
+        }
+
+        /// <summary>
+        /// Gets display name for a feature category
+        /// </summary>
+        public static string GetCategoryDisplayName(FeatureCategory category)
+        {
+            switch (category)
+            {
+                case FeatureCategory.Screenshot: return "Screenshot (take_screenshot)";
+                case FeatureCategory.Runtime: return "Runtime (playmode, execute_code)";
+                case FeatureCategory.SceneEdit: return "Scene Edit (save/load/new scene)";
+                case FeatureCategory.AssetEdit: return "Asset Edit (create/delete/copy asset)";
+                case FeatureCategory.PrefabEdit: return "Prefab Edit (create/save prefab)";
+                case FeatureCategory.ProBuilder: return "ProBuilder";
+                case FeatureCategory.Terrain: return "Terrain";
+                default: return category.ToString();
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Logs a message to the Unity console if console logging is enabled

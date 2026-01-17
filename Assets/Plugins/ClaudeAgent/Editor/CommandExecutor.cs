@@ -97,6 +97,14 @@ namespace ClaudeAgent
 
                 ConsoleLog($"[CommandExecutor] Executing command: {command.operation}");
 
+                // Check feature permission
+                string permissionError = CheckOperationPermission(command.operation);
+                if (permissionError != null)
+                {
+                    ConsoleLogWarning($"[CommandExecutor] {permissionError}");
+                    return (false, permissionError);
+                }
+
                 // Initialize commands on first execution
                 if (_commands == null)
                 {
