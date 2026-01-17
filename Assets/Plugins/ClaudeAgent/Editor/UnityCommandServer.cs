@@ -61,6 +61,7 @@ namespace ClaudeAgent
         {
             if (IsChecking)
             {
+                Debug.Log("[CommandServer] Already checking, skipping...");
                 callback?.Invoke(false, "Already checking for updates");
                 return;
             }
@@ -70,18 +71,21 @@ namespace ClaudeAgent
             checkStartTime = EditorApplication.timeSinceStartup;
 
             string url = string.Format(GitHubApiUrl, GitHubOwner, GitHubRepo);
+            Debug.Log($"[CommandServer] Checking for updates... URL: {url}");
+
             currentRequest = UnityWebRequest.Get(url);
             currentRequest.SetRequestHeader("User-Agent", "Unity-Claude-Agent");
             currentRequest.timeout = 10; // 10 second timeout
 
+            Debug.Log("[CommandServer] Sending web request...");
             var operation = currentRequest.SendWebRequest();
-            operation.completed += (op) => OnCheckComplete(silent);
+            operation.completed += (op) => {
+                Debug.Log("[CommandServer] Web request completed callback fired");
+                OnCheckComplete(silent);
+            };
 
             // Register timeout check
             EditorApplication.update += CheckTimeout;
-
-            if (!silent)
-                if (CommandExecutor.EnableConsoleLogging) Debug.Log("[CommandServer] Checking for updates...");
         }
 
         private static double checkStartTime;
@@ -115,11 +119,23 @@ namespace ClaudeAgent
             EditorApplication.update -= CheckTimeout;
             IsChecking = false;
 
+            Debug.Log($"[CommandServer] OnCheckComplete called. Request null? {currentRequest == null}");
+
             try
             {
+                if (currentRequest == null)
+                {
+                    Debug.LogError("[CommandServer] currentRequest is null!");
+                    checkCallback?.Invoke(false, "Request was null");
+                    return;
+                }
+
+                Debug.Log($"[CommandServer] Response code: {currentRequest.responseCode}, Result: {currentRequest.result}");
+
                 // Handle 404 (no releases yet)
                 if (currentRequest.responseCode == 404)
                 {
+                    Debug.Log("[CommandServer] No releases yet (404)");
                     LatestVersion = null;
                     LastCheckResult = "No releases yet";
                     checkCallback?.Invoke(true, LastCheckResult);
@@ -129,12 +145,13 @@ namespace ClaudeAgent
                 if (currentRequest.result != UnityWebRequest.Result.Success)
                 {
                     string error = $"Failed to check updates: {currentRequest.error}";
-                    if (!silent) if (CommandExecutor.EnableConsoleLogging) Debug.LogWarning($"[CommandServer] {error}");
+                    Debug.LogWarning($"[CommandServer] {error}");
                     checkCallback?.Invoke(false, error);
                     return;
                 }
 
                 string json = currentRequest.downloadHandler.text;
+                Debug.Log($"[CommandServer] Response length: {json?.Length ?? 0}");
                 var release = JObject.Parse(json);
 
                 LatestVersion = release["tag_name"]?.ToString();
@@ -164,21 +181,25 @@ namespace ClaudeAgent
                 // Save check time
                 EditorPrefs.SetString(PrefKeyLastCheckTime, DateTime.Now.ToString("o"));
 
+                Debug.Log($"[CommandServer] Latest version: {LatestVersion}, Current: {CurrentVersion}, HasUpdate: {HasUpdate}");
+
                 if (HasUpdate)
                 {
                     LastCheckResult = $"v{LatestVersion} available";
+                    Debug.Log($"[CommandServer] Update available: {LastCheckResult}");
                     checkCallback?.Invoke(true, LastCheckResult);
                 }
                 else
                 {
                     LastCheckResult = "Latest";
+                    Debug.Log($"[CommandServer] Already on latest version");
                     checkCallback?.Invoke(true, LastCheckResult);
                 }
             }
             catch (Exception e)
             {
                 string error = $"Error parsing update info: {e.Message}";
-                if (!silent) if (CommandExecutor.EnableConsoleLogging) Debug.LogError($"[CommandServer] {error}");
+                Debug.LogError($"[CommandServer] {error}\n{e.StackTrace}");
                 checkCallback?.Invoke(false, error);
             }
             finally
