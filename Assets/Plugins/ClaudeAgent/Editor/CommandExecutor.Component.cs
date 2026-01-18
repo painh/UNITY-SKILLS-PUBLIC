@@ -314,6 +314,7 @@ namespace ClaudeAgent
             // Layer
             { "create_layer", FeatureCategory.Layer },
             { "delete_layer", FeatureCategory.Layer },
+            { "rename_layer", FeatureCategory.Layer },
             { "set_layer", FeatureCategory.Layer },
         };
 

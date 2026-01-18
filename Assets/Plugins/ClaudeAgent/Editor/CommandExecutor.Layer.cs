@@ -15,6 +15,7 @@ namespace ClaudeAgent
             RegisterCommand("list_layers", ListLayers);
             RegisterCommand("create_layer", CreateLayer);
             RegisterCommand("delete_layer", DeleteLayer);
+            RegisterCommand("rename_layer", RenameLayer);
             RegisterCommand("set_layer", SetLayer);
             RegisterCommand("get_layer", GetLayer);
         }
@@ -252,6 +253,71 @@ namespace ClaudeAgent
             catch (Exception e)
             {
                 string error = $"Error deleting layer: {e.Message}";
+                ConsoleLogError($"[CommandExecutor] {error}");
+                return Error(error);
+            }
+        }
+
+        /// <summary>
+        /// Rename an existing layer
+        /// </summary>
+        private (bool, string) RenameLayer(CommandParams p)
+        {
+            try
+            {
+                if (p == null || string.IsNullOrEmpty(p.name))
+                {
+                    return Error("Missing required parameter: name (current layer name)");
+                }
+
+                if (string.IsNullOrEmpty(p.new_name))
+                {
+                    return Error("Missing required parameter: new_name");
+                }
+
+                // Find layer by current name
+                int targetIndex = LayerMask.NameToLayer(p.name);
+                if (targetIndex == -1)
+                {
+                    return Error($"Layer '{p.name}' not found");
+                }
+
+                // Cannot rename builtin layers
+                if (targetIndex < 8)
+                {
+                    return Error($"Cannot rename builtin layer {targetIndex} ('{p.name}'). Only user layers (8-31) can be renamed.");
+                }
+
+                // Check if new name already exists
+                int existingIndex = LayerMask.NameToLayer(p.new_name);
+                if (existingIndex != -1)
+                {
+                    return Error($"Layer '{p.new_name}' already exists at index {existingIndex}");
+                }
+
+                var so = GetTagManager();
+                if (so == null)
+                {
+                    return Error("Failed to load TagManager");
+                }
+
+                var layersProperty = so.FindProperty("layers");
+                if (layersProperty == null)
+                {
+                    return Error("Failed to find layers property in TagManager");
+                }
+
+                // Rename the layer
+                layersProperty.GetArrayElementAtIndex(targetIndex).stringValue = p.new_name;
+                so.ApplyModifiedProperties();
+
+                string result = $"Renamed layer '{p.name}' to '{p.new_name}' (index {targetIndex})";
+                ConsoleLog($"[CommandExecutor] {result}");
+                return Success(result);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error renaming layer: {e.Message}";
                 ConsoleLogError($"[CommandExecutor] {error}");
                 return Error(error);
             }

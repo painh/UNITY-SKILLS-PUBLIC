@@ -100,6 +100,33 @@ Returns success message with the deleted layer name and index.
 - GameObjects using deleted layer will remain on that layer index
 - Consider reassigning GameObjects before deleting their layer
 
+### rename_layer
+
+Renames an existing user layer.
+
+**Parameters:**
+- `name` (required): Current name of the layer
+- `new_name` (required): New name for the layer
+
+**Example:**
+```json
+{
+  "operation": "rename_layer",
+  "params": {
+    "name": "Enemies",
+    "new_name": "HostileNPCs"
+  }
+}
+```
+
+**Response Format:**
+Returns success message with old name, new name, and index.
+
+**Note:**
+- Cannot rename builtin layers (0-7)
+- New name must not already exist
+- GameObjects on this layer are unaffected (they use the index, not the name)
+
 ### set_layer
 
 Sets the layer of a GameObject.
