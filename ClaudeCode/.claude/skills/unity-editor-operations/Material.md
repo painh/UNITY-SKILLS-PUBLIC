@@ -27,6 +27,12 @@ Unified command for getting and setting material properties. Supports three mode
 | a | float | No | Alpha value (0.0-1.0, default: 1.0) |
 | metallic | float | No | Metallic value (0.0-1.0) |
 | smoothness | float | No | Smoothness value (0.0-1.0) |
+| float_properties | object | No | Custom float properties (JSON object) |
+| int_properties | object | No | Custom int properties (JSON object) |
+| vector_properties | object | No | Custom vector4 properties (JSON object) |
+| color_properties | object | No | Custom color properties (JSON object) |
+| enable_keywords | string[] | No | Shader keywords to enable |
+| disable_keywords | string[] | No | Shader keywords to disable |
 
 *One of `path`, `material_path` (without `path`), or `folder_path` is required.
 
@@ -120,6 +126,88 @@ Render Queue: 2000
   "params": {
     "material_path": "Assets/Materials/MyMaterial.mat",
     "shader": "Universal Render Pipeline/Lit"
+  }
+}
+```
+
+**Set Custom Float Properties:**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/MyMaterial.mat",
+    "float_properties": {
+      "_SoftParticlesEnabled": 1,
+      "_InvFade": 2.0
+    }
+  }
+}
+```
+
+**Set Custom Int Properties:**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/MyMaterial.mat",
+    "int_properties": {
+      "_SrcBlend": 5,
+      "_DstBlend": 10
+    }
+  }
+}
+```
+
+**Set Vector Properties:**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/MyMaterial.mat",
+    "vector_properties": {
+      "_TilingOffset": [2.0, 2.0, 0.0, 0.0]
+    }
+  }
+}
+```
+
+**Set Color Properties:**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/MyMaterial.mat",
+    "color_properties": {
+      "_EmissionColor": [1.0, 0.5, 0.0, 1.0]
+    }
+  }
+}
+```
+
+**Enable/Disable Shader Keywords:**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/MyMaterial.mat",
+    "enable_keywords": ["_SOFTPARTICLES_ON", "_EMISSION"],
+    "disable_keywords": ["_ALPHATEST_ON"]
+  }
+}
+```
+
+**Combined Example (Soft Particles Setup):**
+```json
+{
+  "operation": "material",
+  "params": {
+    "material_path": "Assets/Materials/Particle.mat",
+    "float_properties": {
+      "_SoftParticlesEnabled": 1,
+      "_SoftParticlesFarFadeDistance": 3,
+      "_SoftParticlesNearFadeDistance": 0
+    },
+    "enable_keywords": ["_SOFTPARTICLES_ON"]
   }
 }
 ```

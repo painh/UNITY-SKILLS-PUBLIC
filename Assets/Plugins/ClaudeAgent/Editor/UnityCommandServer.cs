@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.15";
+        public const string CurrentVersion = "0.0.16";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";

@@ -422,15 +422,137 @@ namespace ClaudeAgent
                     return GetMaterialAssetInfo(mat, p.material_path);
                 }
 
+                var sb = new StringBuilder();
+                sb.AppendLine($"Updated material: {p.material_path}");
+                bool hasChanges = false;
+
                 // Change shader
                 if (!string.IsNullOrEmpty(p.shader))
                 {
-                    return ChangeMaterialShader(mat, p.shader, p.material_path);
+                    Shader newShader = Shader.Find(p.shader);
+                    if (newShader == null)
+                    {
+                        return Error($"Shader not found: {p.shader}");
+                    }
+                    mat.shader = newShader;
+                    sb.AppendLine($"  Shader: {p.shader}");
+                    hasChanges = true;
                 }
 
-                string err = "No operation specified. Use 'get: true' for info or 'shader' to change shader";
-                ConsoleLogError($"[CommandExecutor] {err}");
-                return (false, err);
+                // Set float properties
+                if (p.float_properties != null)
+                {
+                    var floatProps = p.float_properties as Newtonsoft.Json.Linq.JObject;
+                    if (floatProps != null)
+                    {
+                        foreach (var prop in floatProps)
+                        {
+                            string propName = prop.Key;
+                            float propValue = prop.Value.ToObject<float>();
+                            mat.SetFloat(propName, propValue);
+                            sb.AppendLine($"  Float [{propName}]: {propValue}");
+                            hasChanges = true;
+                        }
+                    }
+                }
+
+                // Set int properties
+                if (p.int_properties != null)
+                {
+                    var intProps = p.int_properties as Newtonsoft.Json.Linq.JObject;
+                    if (intProps != null)
+                    {
+                        foreach (var prop in intProps)
+                        {
+                            string propName = prop.Key;
+                            int propValue = prop.Value.ToObject<int>();
+                            mat.SetInt(propName, propValue);
+                            sb.AppendLine($"  Int [{propName}]: {propValue}");
+                            hasChanges = true;
+                        }
+                    }
+                }
+
+                // Set vector properties
+                if (p.vector_properties != null)
+                {
+                    var vectorProps = p.vector_properties as Newtonsoft.Json.Linq.JObject;
+                    if (vectorProps != null)
+                    {
+                        foreach (var prop in vectorProps)
+                        {
+                            string propName = prop.Key;
+                            var arr = prop.Value.ToObject<float[]>();
+                            if (arr != null && arr.Length >= 4)
+                            {
+                                Vector4 vec = new Vector4(arr[0], arr[1], arr[2], arr[3]);
+                                mat.SetVector(propName, vec);
+                                sb.AppendLine($"  Vector [{propName}]: {vec}");
+                                hasChanges = true;
+                            }
+                        }
+                    }
+                }
+
+                // Set color properties
+                if (p.color_properties != null)
+                {
+                    var colorProps = p.color_properties as Newtonsoft.Json.Linq.JObject;
+                    if (colorProps != null)
+                    {
+                        foreach (var prop in colorProps)
+                        {
+                            string propName = prop.Key;
+                            var arr = prop.Value.ToObject<float[]>();
+                            if (arr != null && arr.Length >= 3)
+                            {
+                                Color color = arr.Length >= 4
+                                    ? new Color(arr[0], arr[1], arr[2], arr[3])
+                                    : new Color(arr[0], arr[1], arr[2]);
+                                mat.SetColor(propName, color);
+                                sb.AppendLine($"  Color [{propName}]: {color}");
+                                hasChanges = true;
+                            }
+                        }
+                    }
+                }
+
+                // Enable keywords
+                if (p.enable_keywords != null)
+                {
+                    foreach (var keyword in p.enable_keywords)
+                    {
+                        mat.EnableKeyword(keyword);
+                        sb.AppendLine($"  Enabled keyword: {keyword}");
+                        hasChanges = true;
+                    }
+                }
+
+                // Disable keywords
+                if (p.disable_keywords != null)
+                {
+                    foreach (var keyword in p.disable_keywords)
+                    {
+                        mat.DisableKeyword(keyword);
+                        sb.AppendLine($"  Disabled keyword: {keyword}");
+                        hasChanges = true;
+                    }
+                }
+
+                if (!hasChanges)
+                {
+                    string err = "No operation specified. Use 'get: true' for info, 'shader' to change shader, or property parameters";
+                    ConsoleLogError($"[CommandExecutor] {err}");
+                    return (false, err);
+                }
+
+                // Save changes
+                EditorUtility.SetDirty(mat);
+                AssetDatabase.SaveAssets();
+
+                string result = sb.ToString().TrimEnd();
+                ConsoleLog($"[CommandExecutor] {result}");
+                return Success(result);
             }
             catch (Exception e)
             {

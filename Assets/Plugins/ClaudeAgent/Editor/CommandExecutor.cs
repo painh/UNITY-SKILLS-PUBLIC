@@ -939,6 +939,12 @@ namespace ClaudeAgent
             public string from_shader;         // Source shader filter (for batch processing)
             public float metallic = -1f;       // Metallic value (0-1, -1=not set)
             public float smoothness = -1f;     // Smoothness value (0-1, -1=not set)
+            public object float_properties;    // Custom float properties (JSON object)
+            public object int_properties;      // Custom int properties (JSON object)
+            public object vector_properties;   // Custom vector4 properties (JSON object)
+            public object color_properties;    // Custom color properties (JSON object)
+            public string[] enable_keywords;   // Shader keywords to enable
+            public string[] disable_keywords;  // Shader keywords to disable
 
             // Phase 7C parameters (Scene operations)
             public string scene_path;          // Scene path (e.g., "Assets/Scenes/MyScene.unity")
