@@ -914,7 +914,7 @@ namespace ClaudeAgent
             public string parent;              // Path/name of parent object
             public bool active;                // Active state (true/false)
             public string tag;                 // Search by tag
-            public string layer;               // Layer name (for set_layer)
+            public string layer_name;          // Layer name (for set_layer)
             public bool local;                 // Use local coordinates/rotation (default: false=world)
             public string action;              // For playmode: play, stop, pause, resume
 

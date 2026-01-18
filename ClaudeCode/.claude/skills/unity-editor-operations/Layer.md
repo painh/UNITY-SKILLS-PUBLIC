@@ -116,7 +116,7 @@ Sets the layer of a GameObject.
   "operation": "set_layer",
   "params": {
     "path": "Enemy_01",
-    "layer": "Enemies"
+    "layer_name": "Enemies"
   }
 }
 ```
@@ -127,7 +127,7 @@ Sets the layer of a GameObject.
   "operation": "set_layer",
   "params": {
     "path": "Player",
-    "layer": "Player",
+    "layer_name": "Player",
     "recursive": true
   }
 }
@@ -177,8 +177,8 @@ Returns the layer name and index for the specified GameObject.
 {"operation": "create_layer", "params": {"name": "Projectiles"}}
 
 // Assign GameObjects
-{"operation": "set_layer", "params": {"path": "Player", "layer": "Player", "recursive": true}}
-{"operation": "set_layer", "params": {"path": "Enemy_01", "layer": "Enemies"}}
+{"operation": "set_layer", "params": {"path": "Player", "layer_name": "Player", "recursive": true}}
+{"operation": "set_layer", "params": {"path": "Enemy_01", "layer_name": "Enemies"}}
 ```
 
 ### Organizing scene objects
@@ -188,8 +188,8 @@ Returns the layer name and index for the specified GameObject.
 {"operation": "create_layer", "params": {"name": "Interactables"}}
 
 // Assign objects
-{"operation": "set_layer", "params": {"path": "Ground", "layer": "Environment"}}
-{"operation": "set_layer", "params": {"path": "Door", "layer": "Interactables"}}
+{"operation": "set_layer", "params": {"path": "Ground", "layer_name": "Environment"}}
+{"operation": "set_layer", "params": {"path": "Door", "layer_name": "Interactables"}}
 ```
 
 ## Feature Permission

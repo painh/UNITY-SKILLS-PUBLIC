@@ -269,7 +269,7 @@ namespace ClaudeAgent
                     return Error("Missing required parameter: path");
                 }
 
-                if (string.IsNullOrEmpty(p.layer) && p.index < 0)
+                if (string.IsNullOrEmpty(p.layer_name) && p.index < 0)
                 {
                     return Error("Missing required parameter: layer (name or index)");
                 }
@@ -283,12 +283,12 @@ namespace ClaudeAgent
                 int layerIndex;
 
                 // Get layer by name or index
-                if (!string.IsNullOrEmpty(p.layer))
+                if (!string.IsNullOrEmpty(p.layer_name))
                 {
-                    layerIndex = LayerMask.NameToLayer(p.layer);
+                    layerIndex = LayerMask.NameToLayer(p.layer_name);
                     if (layerIndex == -1)
                     {
-                        return Error($"Layer '{p.layer}' not found");
+                        return Error($"Layer '{p.layer_name}' not found");
                     }
                 }
                 else
