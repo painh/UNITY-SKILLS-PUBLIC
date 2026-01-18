@@ -252,6 +252,7 @@ namespace ClaudeAgent
             ProBuilder,     // All ProBuilder operations
             Terrain,        // All Terrain operations
             Layer,          // create_layer, delete_layer, set_layer
+            Physics,        // Physics settings, layer collision matrix
         }
 
         private static Dictionary<FeatureCategory, bool> _featurePermissions = new Dictionary<FeatureCategory, bool>();
@@ -316,6 +317,10 @@ namespace ClaudeAgent
             { "delete_layer", FeatureCategory.Layer },
             { "rename_layer", FeatureCategory.Layer },
             { "set_layer", FeatureCategory.Layer },
+
+            // Physics
+            { "set_physics_settings", FeatureCategory.Physics },
+            { "set_layer_collision", FeatureCategory.Physics },
         };
 
         /// <summary>

@@ -52,6 +52,7 @@ namespace ClaudeAgent
             RegisterScreenshotCommands();
             RegisterRuntimeCommands();
             RegisterLayerCommands();
+            RegisterPhysicsCommands();
         }
 
         /// <summary>
@@ -1084,6 +1085,23 @@ namespace ClaudeAgent
             // Note: uses existing 'layer' property from Animator params
             public string state;                   // Animation state name to play
             public float normalized_time = -1f;    // Start position (0.0-1.0, -1 = use default 0)
+
+            // Physics settings parameters
+            public float[] gravity;                // Gravity vector [x, y, z]
+            public int solver_iterations = -1;     // Default solver iterations (-1=not set)
+            public int solver_velocity_iterations = -1; // Default solver velocity iterations (-1=not set)
+            public float sleep_threshold = -1f;    // Sleep threshold (-1=not set)
+            public float contact_offset = -1f;     // Default contact offset (-1=not set)
+            public float bounce_threshold = -1f;   // Bounce threshold (-1=not set)
+            public bool auto_sync_transforms;      // Auto sync transforms
+            public bool auto_sync_transforms_set;  // Flag to check if auto_sync_transforms was set
+            public bool queries_hit_triggers;      // Queries hit triggers
+            public bool queries_hit_triggers_set;  // Flag to check if queries_hit_triggers was set
+            public bool queries_hit_backfaces;     // Queries hit backfaces
+            public bool queries_hit_backfaces_set; // Flag to check if queries_hit_backfaces was set
+            public string layer2_name;             // Second layer name (for set_layer_collision)
+            public int layer2 = -1;                // Second layer index (for set_layer_collision)
+            public bool ignore;                    // Ignore collision flag
         }
     }
 }
