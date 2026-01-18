@@ -251,6 +251,7 @@ namespace ClaudeAgent
             PrefabEdit,     // create_prefab, save_prefab, apply_prefab_overrides
             ProBuilder,     // All ProBuilder operations
             Terrain,        // All Terrain operations
+            Layer,          // create_layer, delete_layer, set_layer
         }
 
         private static Dictionary<FeatureCategory, bool> _featurePermissions = new Dictionary<FeatureCategory, bool>();
@@ -309,6 +310,11 @@ namespace ClaudeAgent
             { "smooth_terrain", FeatureCategory.Terrain },
             { "flatten_terrain", FeatureCategory.Terrain },
             { "get_terrain_info", FeatureCategory.Terrain },
+
+            // Layer
+            { "create_layer", FeatureCategory.Layer },
+            { "delete_layer", FeatureCategory.Layer },
+            { "set_layer", FeatureCategory.Layer },
         };
 
         /// <summary>
