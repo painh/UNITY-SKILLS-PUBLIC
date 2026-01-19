@@ -15,14 +15,14 @@ All input operations support the `input_system` parameter to choose how input is
 
 | Value | Description |
 |-------|-------------|
-| `auto` | (Default) Try New Input System first, fall back to OS-level input |
-| `new` | Force New Input System (fails if not available) |
-| `os` | Force OS-level input (uses CGEvent on macOS, user32.dll on Windows) |
+| `os` | (Default) OS-level input - works with both Legacy and New Input System |
+| `auto` | Try New Input System first, fall back to OS-level input |
+| `new` | Force New Input System only (fails if not available) |
 
 **When to use each:**
-- `auto` - Recommended for most cases, works with any project
-- `new` - When you specifically need New Input System features
-- `os` - For Legacy Input Manager projects, or when New Input System isn't working
+- `os` - Default, works universally with any Unity project
+- `auto` - When you want to prefer New Input System's features if available
+- `new` - When you specifically need New Input System only
 
 ---
 
@@ -36,7 +36,7 @@ Simulate keyboard input (press, release, or tap a key).
 |-----------|------|----------|-------------|
 | `key` | string | Yes | Key name (e.g., "W", "Space", "LeftCtrl") |
 | `action` | string | No | "press", "release", or "tap" (default: "tap") |
-| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
+| `input_system` | string | No | "os" (default), "auto", or "new" |
 
 ### Supported Keys
 
@@ -83,7 +83,7 @@ Simulate mouse button clicks and position.
 | `button` | string | No | "left", "right", or "middle" (default: "left") |
 | `action` | string | No | "click", "down", "up", or "doubleclick" (default: "click") |
 | `mouse_position` | float[2] | No | Screen position [x, y] |
-| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
+| `input_system` | string | No | "os" (default), "auto", or "new" |
 
 ### Example
 
@@ -118,7 +118,7 @@ Execute a sequence of inputs with timing control.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `inputs` | array | Yes | Array of input steps |
-| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
+| `input_system` | string | No | "os" (default), "auto", or "new" |
 
 ### Input Step Types
 

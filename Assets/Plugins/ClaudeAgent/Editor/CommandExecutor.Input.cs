@@ -292,7 +292,12 @@ namespace ClaudeAgent
         /// </summary>
         private string DetermineInputSystem(string requested)
         {
-            if (string.IsNullOrEmpty(requested) || requested == "auto")
+            if (string.IsNullOrEmpty(requested))
+            {
+                // Default to OS-level input (works with both Legacy and New Input System)
+                return "os";
+            }
+            if (requested == "auto")
             {
                 // Auto-detect: prefer New Input System if available
                 return IsNewInputSystemAvailable() ? "new" : "os";

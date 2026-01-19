@@ -1123,7 +1123,7 @@ namespace ClaudeAgent
             public string button;                  // Mouse button (left, right, middle)
             public float[] mouse_position;         // Mouse position [x, y]
             public object inputs;                  // Input sequence array (for simulate_input_sequence)
-            public string input_system;            // Input system: "auto", "new", or "os" (default: "auto")
+            public string input_system;            // Input system: "os" (default), "auto", or "new"
         }
     }
 }
