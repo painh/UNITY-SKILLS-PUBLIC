@@ -323,14 +323,30 @@ namespace ClaudeAgent
         {
             try
             {
-                // Get GameView type via reflection (it's an internal class)
+#if UNITY_EDITOR_OSX
+                // macOS: Activate Unity app using osascript
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "osascript",
+                    Arguments = "-e 'tell application \"Unity\" to activate'",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                System.Diagnostics.Process.Start(psi)?.WaitForExit(100);
+#elif UNITY_EDITOR_WIN
+                // Windows: Use SetForegroundWindow
+                var hwnd = GetUnityWindowHandle();
+                if (hwnd != IntPtr.Zero)
+                {
+                    SetForegroundWindow(hwnd);
+                }
+#endif
+                // Also focus Game View within Unity Editor
                 var gameViewType = System.Type.GetType("UnityEditor.GameView, UnityEditor");
                 if (gameViewType != null)
                 {
-                    // Focus the Game View window
                     EditorWindow.FocusWindowIfItsOpen(gameViewType);
 
-                    // Also try to get the window and focus it directly
                     var getWindow = typeof(EditorWindow).GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
                     if (getWindow != null)
                     {
@@ -347,6 +363,20 @@ namespace ClaudeAgent
                 ConsoleLogWarning($"[CommandExecutor] Could not focus Game View: {e.Message}");
             }
         }
+
+#if UNITY_EDITOR_WIN
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetActiveWindow();
+
+        private IntPtr GetUnityWindowHandle()
+        {
+            // Get the main Unity window handle
+            return System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+        }
+#endif
 
         /// <summary>
         /// Get the current Keyboard device
