@@ -93,6 +93,9 @@ namespace ClaudeAgent
 
         private void SendOSKeyEvent(string keyName, bool keyDown)
         {
+            // Focus Game View before sending OS-level input
+            FocusGameView();
+
             if (!MacKeyMap.TryGetValue(keyName, out ushort keyCode))
             {
                 ConsoleLogWarning($"[CommandExecutor] Unknown key for macOS: {keyName}");
@@ -109,6 +112,8 @@ namespace ClaudeAgent
 
         private void SendOSMouseEvent(string button, string action, float x, float y)
         {
+            // Focus Game View before sending OS-level input
+            FocusGameView();
             uint mouseType;
             uint mouseButton = 0;
 
@@ -205,6 +210,9 @@ namespace ClaudeAgent
 
         private void SendOSKeyEvent(string keyName, bool keyDown)
         {
+            // Focus Game View before sending OS-level input
+            FocusGameView();
+
             if (!WinKeyMap.TryGetValue(keyName, out byte vk))
             {
                 ConsoleLogWarning($"[CommandExecutor] Unknown key for Windows: {keyName}");
@@ -217,6 +225,9 @@ namespace ClaudeAgent
 
         private void SendOSMouseEvent(string button, string action, float x, float y)
         {
+            // Focus Game View before sending OS-level input
+            FocusGameView();
+
             // Set cursor position
             SetCursorPos((int)x, (int)y);
 
@@ -303,6 +314,38 @@ namespace ClaudeAgent
                 return IsNewInputSystemAvailable() ? "new" : "os";
             }
             return requested.ToLower();
+        }
+
+        /// <summary>
+        /// Focus the Game View window before sending OS-level input
+        /// </summary>
+        private void FocusGameView()
+        {
+            try
+            {
+                // Get GameView type via reflection (it's an internal class)
+                var gameViewType = System.Type.GetType("UnityEditor.GameView, UnityEditor");
+                if (gameViewType != null)
+                {
+                    // Focus the Game View window
+                    EditorWindow.FocusWindowIfItsOpen(gameViewType);
+
+                    // Also try to get the window and focus it directly
+                    var getWindow = typeof(EditorWindow).GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
+                    if (getWindow != null)
+                    {
+                        var gameView = getWindow.Invoke(null, new object[] { gameViewType, false }) as EditorWindow;
+                        if (gameView != null)
+                        {
+                            gameView.Focus();
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                ConsoleLogWarning($"[CommandExecutor] Could not focus Game View: {e.Message}");
+            }
         }
 
         /// <summary>
