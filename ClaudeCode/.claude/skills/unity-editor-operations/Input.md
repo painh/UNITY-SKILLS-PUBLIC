@@ -1,10 +1,28 @@
 # Input Simulation Operations
 
-Input simulation operations allow simulating keyboard and mouse input during Play mode. This uses Unity's New Input System.
+Input simulation operations allow simulating keyboard and mouse input during Play mode. Supports both Unity's New Input System and Legacy Input Manager (via OS-level input).
 
 **Requirements:**
 - Unity must be in **Play mode**
-- New Input System package must be installed
+- For New Input System: Input System package must be installed
+- For Legacy Input: Works on macOS and Windows using OS-level events
+
+---
+
+## Input System Selection
+
+All input operations support the `input_system` parameter to choose how input is delivered:
+
+| Value | Description |
+|-------|-------------|
+| `auto` | (Default) Try New Input System first, fall back to OS-level input |
+| `new` | Force New Input System (fails if not available) |
+| `os` | Force OS-level input (uses CGEvent on macOS, user32.dll on Windows) |
+
+**When to use each:**
+- `auto` - Recommended for most cases, works with any project
+- `new` - When you specifically need New Input System features
+- `os` - For Legacy Input Manager projects, or when New Input System isn't working
 
 ---
 
@@ -18,6 +36,7 @@ Simulate keyboard input (press, release, or tap a key).
 |-----------|------|----------|-------------|
 | `key` | string | Yes | Key name (e.g., "W", "Space", "LeftCtrl") |
 | `action` | string | No | "press", "release", or "tap" (default: "tap") |
+| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
 
 ### Supported Keys
 
@@ -35,11 +54,11 @@ Simulate keyboard input (press, release, or tap a key).
 # Tap W key (press and release)
 python send_message.py '{"operation":"simulate_key","params":{"key":"W","action":"tap"}}'
 
-# Hold down Space
-python send_message.py '{"operation":"simulate_key","params":{"key":"Space","action":"press"}}'
+# Hold down Space using OS-level input (for Legacy Input projects)
+python send_message.py '{"operation":"simulate_key","params":{"key":"Space","action":"press","input_system":"os"}}'
 
 # Release Space
-python send_message.py '{"operation":"simulate_key","params":{"key":"Space","action":"release"}}'
+python send_message.py '{"operation":"simulate_key","params":{"key":"Space","action":"release","input_system":"os"}}'
 ```
 
 ### Response
@@ -47,7 +66,7 @@ python send_message.py '{"operation":"simulate_key","params":{"key":"Space","act
 ```json
 {
   "success": true,
-  "result": "Pressed key: W (will release next frame)"
+  "result": "Pressed key: W (will release next frame) [os]"
 }
 ```
 
@@ -64,6 +83,7 @@ Simulate mouse button clicks and position.
 | `button` | string | No | "left", "right", or "middle" (default: "left") |
 | `action` | string | No | "click", "down", "up", or "doubleclick" (default: "click") |
 | `mouse_position` | float[2] | No | Screen position [x, y] |
+| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
 
 ### Example
 
@@ -71,8 +91,8 @@ Simulate mouse button clicks and position.
 # Left click at current position
 python send_message.py '{"operation":"simulate_mouse","params":{"button":"left","action":"click"}}'
 
-# Right click at specific position
-python send_message.py '{"operation":"simulate_mouse","params":{"button":"right","action":"click","mouse_position":[960,540]}}'
+# Right click at specific position using OS-level input
+python send_message.py '{"operation":"simulate_mouse","params":{"button":"right","action":"click","mouse_position":[960,540],"input_system":"os"}}'
 
 # Double click
 python send_message.py '{"operation":"simulate_mouse","params":{"button":"left","action":"doubleclick"}}'
@@ -83,7 +103,7 @@ python send_message.py '{"operation":"simulate_mouse","params":{"button":"left",
 ```json
 {
   "success": true,
-  "result": "Mouse left button down (will release next frame) at (960, 540)"
+  "result": "Mouse left button down (will release next frame) at (960, 540) [os]"
 }
 ```
 
@@ -98,6 +118,7 @@ Execute a sequence of inputs with timing control.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `inputs` | array | Yes | Array of input steps |
+| `input_system` | string | No | "auto", "new", or "os" (default: "auto") |
 
 ### Input Step Types
 
@@ -119,8 +140,8 @@ Execute a sequence of inputs with timing control.
 ### Example
 
 ```bash
-# Move forward for 1 second, then attack
-python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs":[
+# Move forward for 1 second, then attack (using OS-level for Legacy Input)
+python send_message.py '{"operation":"simulate_input_sequence","params":{"input_system":"os","inputs":[
   {"type":"key","key":"W","action":"down"},
   {"type":"wait","duration":1.0},
   {"type":"key","key":"W","action":"up"},
@@ -133,7 +154,7 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs
 ```json
 {
   "success": true,
-  "result": "Started input sequence with 4 steps"
+  "result": "Started input sequence with 4 steps [os]"
 }
 ```
 
@@ -150,12 +171,12 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs
 }
 ```
 
-### Input System Not Available
+### Input System Not Available (when forcing 'new')
 
 ```json
 {
   "success": false,
-  "error": "New Input System is not available. Please install the Input System package."
+  "error": "New Input System is not available. Use input_system: 'os' for Legacy Input."
 }
 ```
 
@@ -165,6 +186,15 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs
 {
   "success": false,
   "error": "Unknown key: InvalidKey. Use Unity KeyCode names (e.g., 'W', 'Space', 'LeftCtrl')."
+}
+```
+
+### Unsupported Platform (OS-level input)
+
+```json
+{
+  "success": false,
+  "error": "OS-level input is only supported on macOS and Windows."
 }
 ```
 
@@ -188,6 +218,10 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs
    - Checks console logs
    - All without user intervention
 
+4. **Legacy Input Manager Projects**
+   - Use `input_system: "os"` for projects using the old Input system
+   - Works without any additional packages
+
 ---
 
 ## Best Practices
@@ -197,3 +231,5 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"inputs
 3. **Add wait steps** - Give game time to respond between inputs
 4. **Check console logs** - Use `get_logs` to verify results
 5. **Tap for simple presses** - Use "tap" action for quick key presses
+6. **Use `auto` input_system** - Unless you need specific behavior
+7. **For Legacy Input projects** - Use `input_system: "os"` explicitly
