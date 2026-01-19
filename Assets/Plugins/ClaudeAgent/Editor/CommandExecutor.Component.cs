@@ -253,6 +253,7 @@ namespace ClaudeAgent
             Terrain,        // All Terrain operations
             Layer,          // create_layer, delete_layer, set_layer
             Physics,        // Physics settings, layer collision matrix
+            Input,          // simulate_key, simulate_mouse, simulate_input_sequence
         }
 
         private static Dictionary<FeatureCategory, bool> _featurePermissions = new Dictionary<FeatureCategory, bool>();
@@ -321,6 +322,11 @@ namespace ClaudeAgent
             // Physics
             { "set_physics_settings", FeatureCategory.Physics },
             { "set_layer_collision", FeatureCategory.Physics },
+
+            // Input
+            { "simulate_key", FeatureCategory.Input },
+            { "simulate_mouse", FeatureCategory.Input },
+            { "simulate_input_sequence", FeatureCategory.Input },
         };
 
         /// <summary>

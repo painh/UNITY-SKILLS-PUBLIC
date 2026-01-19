@@ -53,6 +53,7 @@ namespace ClaudeAgent
             RegisterRuntimeCommands();
             RegisterLayerCommands();
             RegisterPhysicsCommands();
+            RegisterInputCommands();
         }
 
         /// <summary>
@@ -436,6 +437,14 @@ namespace ClaudeAgent
                             p.value = valueToken.ToString();
                             break;
                     }
+                }
+
+                // Parse inputs (object type: array of input steps for simulate_input_sequence)
+                var inputsToken = paramsObj["inputs"];
+                if (inputsToken != null && inputsToken.Type == JTokenType.Array)
+                {
+                    p.inputs = inputsToken as JArray;
+                    ConsoleLog($"[CommandExecutor] Parsed inputs: {((JArray)p.inputs).Count} steps");
                 }
             }
             catch (Exception e)
@@ -1108,6 +1117,12 @@ namespace ClaudeAgent
             public string layer2_name;             // Second layer name (for set_layer_collision)
             public int layer2 = -1;                // Second layer index (for set_layer_collision)
             public bool ignore;                    // Ignore collision flag
+
+            // Input simulation parameters
+            public string key;                     // Key name (e.g., "W", "Space", "LeftCtrl")
+            public string button;                  // Mouse button (left, right, middle)
+            public float[] mouse_position;         // Mouse position [x, y]
+            public object inputs;                  // Input sequence array (for simulate_input_sequence)
         }
     }
 }
