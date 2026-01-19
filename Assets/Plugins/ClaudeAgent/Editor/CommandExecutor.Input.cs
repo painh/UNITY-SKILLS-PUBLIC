@@ -30,7 +30,7 @@ namespace ClaudeAgent
         private static extern IntPtr CGEventCreateKeyboardEvent(IntPtr source, ushort virtualKey, bool keyDown);
 
         [DllImport("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")]
-        private static extern void CGEventPost(uint tap, IntPtr event);
+        private static extern void CGEventPost(uint tap, IntPtr eventRef);
 
         [DllImport("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")]
         private static extern void CFRelease(IntPtr cf);
