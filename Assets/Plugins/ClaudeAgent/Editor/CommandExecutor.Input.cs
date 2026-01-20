@@ -316,23 +316,108 @@ namespace ClaudeAgent
             return requested.ToLower();
         }
 
+        // Track last focus time to avoid redundant focus calls
+        private static float _lastFocusTime = 0f;
+        private static float _focusCooldown = 0.5f; // 500ms cooldown
+
         /// <summary>
         /// Focus the Game View window before sending OS-level input
         /// </summary>
         private void FocusGameView()
         {
+            // Skip if recently focused
+            if (Time.realtimeSinceStartup - _lastFocusTime < _focusCooldown)
+            {
+                return;
+            }
+            _lastFocusTime = Time.realtimeSinceStartup;
+
             try
             {
-#if UNITY_EDITOR_OSX
-                // macOS: Activate Unity app using osascript
-                var psi = new System.Diagnostics.ProcessStartInfo
+                ConsoleLog("[CommandExecutor] FocusGameView called");
+
+                // Get Game View window and focus it FIRST (to switch tab if needed)
+                var gameViewType = System.Type.GetType("UnityEditor.GameView, UnityEditor");
+                EditorWindow gameView = null;
+                Rect gameViewRect = Rect.zero;
+
+                if (gameViewType != null)
                 {
-                    FileName = "osascript",
-                    Arguments = "-e 'tell application \"Unity\" to activate'",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                System.Diagnostics.Process.Start(psi)?.WaitForExit(100);
+                    var getWindow = typeof(EditorWindow).GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
+                    if (getWindow != null)
+                    {
+                        gameView = getWindow.Invoke(null, new object[] { gameViewType, false }) as EditorWindow;
+                        if (gameView != null)
+                        {
+                            // Focus Game View tab FIRST before getting position
+                            EditorWindow.FocusWindowIfItsOpen(gameViewType);
+                            gameView.Focus();
+                            gameView.Repaint();
+
+                            // Get position after focus (tab should now be active)
+                            gameViewRect = gameView.position;
+                            ConsoleLog($"[CommandExecutor] Game View focused and position: {gameViewRect}");
+                        }
+                    }
+                }
+
+#if UNITY_EDITOR_OSX
+                // macOS: Activate Unity app using osascript with PID
+                int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+                ConsoleLog($"[CommandExecutor] Activating Unity (PID: {pid}) via osascript...");
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "osascript",
+                        Arguments = $"-e 'tell application \"System Events\" to set frontmost of (first process whose unix id is {pid}) to true'",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    var proc = System.Diagnostics.Process.Start(psi);
+                    if (proc != null)
+                    {
+                        proc.WaitForExit(1000);
+                        if (proc.HasExited)
+                        {
+                            ConsoleLog($"[CommandExecutor] osascript exit code: {proc.ExitCode}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ConsoleLogWarning($"[CommandExecutor] osascript error: {ex.Message}");
+                }
+
+                // Click on Game View center to grab keyboard focus
+                if (gameViewRect.width > 0 && gameViewRect.height > 0)
+                {
+                    // Unity EditorWindow.position is already in screen coordinates (top-left origin)
+                    // CGEvent also uses screen coordinates with top-left origin on macOS
+                    // Add offset for tab bar (~20px) and toolbar area
+                    float centerX = gameViewRect.x + gameViewRect.width / 2;
+                    float centerY = gameViewRect.y + gameViewRect.height / 2 + 40; // Offset for tab + toolbar
+                    ConsoleLog($"[CommandExecutor] Clicking Game View at ({centerX}, {centerY}) [Rect: {gameViewRect}]");
+
+                    // Send mouse click to grab focus
+                    CGPoint point = new CGPoint(centerX, centerY);
+                    IntPtr mouseDown = CGEventCreateMouseEvent(IntPtr.Zero, 1u, point, 0); // kCGEventLeftMouseDown
+                    if (mouseDown != IntPtr.Zero)
+                    {
+                        CGEventPost(0, mouseDown);
+                        CFRelease(mouseDown);
+                    }
+                    // Small delay between down and up
+                    System.Threading.Thread.Sleep(50);
+                    IntPtr mouseUp = CGEventCreateMouseEvent(IntPtr.Zero, 2u, point, 0);   // kCGEventLeftMouseUp
+                    if (mouseUp != IntPtr.Zero)
+                    {
+                        CGEventPost(0, mouseUp);
+                        CFRelease(mouseUp);
+                    }
+                    // Wait for focus to be established
+                    System.Threading.Thread.Sleep(100);
+                }
 #elif UNITY_EDITOR_WIN
                 // Windows: Use SetForegroundWindow
                 var hwnd = GetUnityWindowHandle();
@@ -340,23 +425,17 @@ namespace ClaudeAgent
                 {
                     SetForegroundWindow(hwnd);
                 }
-#endif
-                // Also focus Game View within Unity Editor
-                var gameViewType = System.Type.GetType("UnityEditor.GameView, UnityEditor");
-                if (gameViewType != null)
-                {
-                    EditorWindow.FocusWindowIfItsOpen(gameViewType);
 
-                    var getWindow = typeof(EditorWindow).GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
-                    if (getWindow != null)
-                    {
-                        var gameView = getWindow.Invoke(null, new object[] { gameViewType, false }) as EditorWindow;
-                        if (gameView != null)
-                        {
-                            gameView.Focus();
-                        }
-                    }
+                // Click on Game View center
+                if (gameViewRect.width > 0 && gameViewRect.height > 0)
+                {
+                    int centerX = (int)(gameViewRect.x + gameViewRect.width / 2);
+                    int centerY = (int)(gameViewRect.y + gameViewRect.height / 2);
+                    SetCursorPos(centerX, centerY);
+                    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
                 }
+#endif
             }
             catch (Exception e)
             {
@@ -402,6 +481,100 @@ namespace ClaudeAgent
 
         #endregion
 
+        #region Delayed Release System
+
+        private class DelayedRelease
+        {
+            public float releaseTime;
+            public string key;
+            public string button;
+            public float mouseX, mouseY;
+            public bool isNewInputSystem;
+            public object control; // For new input system (key or mouse button control)
+        }
+
+        private List<DelayedRelease> _pendingReleases = new List<DelayedRelease>();
+        private bool _releaseProcessorRunning = false;
+
+        private void ScheduleDelayedRelease(DelayedRelease release)
+        {
+            _pendingReleases.Add(release);
+            if (!_releaseProcessorRunning)
+            {
+                _releaseProcessorRunning = true;
+                EditorApplication.update += ProcessDelayedReleases;
+            }
+        }
+
+        private void ProcessDelayedReleases()
+        {
+            if (!EditorApplication.isPlaying || _pendingReleases.Count == 0)
+            {
+                StopDelayedReleaseProcessor();
+                return;
+            }
+
+            float currentTime = Time.realtimeSinceStartup;
+            var releasesToProcess = new List<DelayedRelease>();
+
+            // Find all releases that are due
+            for (int i = _pendingReleases.Count - 1; i >= 0; i--)
+            {
+                if (currentTime >= _pendingReleases[i].releaseTime)
+                {
+                    releasesToProcess.Add(_pendingReleases[i]);
+                    _pendingReleases.RemoveAt(i);
+                }
+            }
+
+            // Process releases
+            foreach (var release in releasesToProcess)
+            {
+                if (!string.IsNullOrEmpty(release.key))
+                {
+                    // Key release
+                    if (release.isNewInputSystem && release.control != null)
+                    {
+                        SetKeyState(release.control, false);
+                        ConsoleLog($"[CommandExecutor] Delayed key release: {release.key}");
+                    }
+                    else
+                    {
+                        SendOSKeyEvent(release.key, false);
+                        ConsoleLog($"[CommandExecutor] Delayed key release (OS): {release.key}");
+                    }
+                }
+                else if (!string.IsNullOrEmpty(release.button))
+                {
+                    // Mouse button release
+                    if (release.isNewInputSystem && release.control != null)
+                    {
+                        SetKeyState(release.control, false);
+                        ConsoleLog($"[CommandExecutor] Delayed mouse release: {release.button}");
+                    }
+                    else
+                    {
+                        SendOSMouseEvent(release.button, "up", release.mouseX, release.mouseY);
+                        ConsoleLog($"[CommandExecutor] Delayed mouse release (OS): {release.button}");
+                    }
+                }
+            }
+
+            // Stop processor if no more pending releases
+            if (_pendingReleases.Count == 0)
+            {
+                StopDelayedReleaseProcessor();
+            }
+        }
+
+        private void StopDelayedReleaseProcessor()
+        {
+            _releaseProcessorRunning = false;
+            EditorApplication.update -= ProcessDelayedReleases;
+        }
+
+        #endregion
+
         #region Key Simulation
 
         /// <summary>
@@ -436,6 +609,9 @@ namespace ClaudeAgent
                 var result = new StringBuilder();
                 result.Append($"[{inputSystem}] ");
 
+                // Determine release delay in seconds (duration is in ms, default 100ms)
+                float releaseDelay = p.duration > 0 ? p.duration / 1000f : 0.1f;
+
                 if (inputSystem == "new")
                 {
                     // Use New Input System
@@ -466,13 +642,14 @@ namespace ClaudeAgent
                     {
                         if (action == "tap")
                         {
-                            var releaseControl = keyControl;
-                            EditorApplication.delayCall += () =>
+                            ScheduleDelayedRelease(new DelayedRelease
                             {
-                                if (EditorApplication.isPlaying)
-                                    SetKeyState(releaseControl, false);
-                            };
-                            result.Append(" (will release next frame)");
+                                releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                                key = p.key,
+                                isNewInputSystem = true,
+                                control = keyControl
+                            });
+                            result.Append($" (will release after {releaseDelay * 1000f:0}ms)");
                         }
                         else
                         {
@@ -493,13 +670,13 @@ namespace ClaudeAgent
                     {
                         if (action == "tap")
                         {
-                            string keyToRelease = p.key;
-                            EditorApplication.delayCall += () =>
+                            ScheduleDelayedRelease(new DelayedRelease
                             {
-                                if (EditorApplication.isPlaying)
-                                    SendOSKeyEvent(keyToRelease, false);
-                            };
-                            result.Append(" (will release next frame)");
+                                releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                                key = p.key,
+                                isNewInputSystem = false
+                            });
+                            result.Append($" (will release after {releaseDelay * 1000f:0}ms)");
                         }
                         else
                         {
@@ -658,8 +835,37 @@ namespace ClaudeAgent
                 var result = new StringBuilder();
                 result.Append($"[{inputSystem}] ");
 
-                float mouseX = p?.mouse_position != null && p.mouse_position.Length >= 2 ? p.mouse_position[0] : 0;
-                float mouseY = p?.mouse_position != null && p.mouse_position.Length >= 2 ? p.mouse_position[1] : 0;
+                // Determine release delay in seconds (duration is in ms, default 100ms)
+                float releaseDelay = p.duration > 0 ? p.duration / 1000f : 0.1f;
+
+                // Get mouse position - if not specified, use Game View center
+                float mouseX = 0;
+                float mouseY = 0;
+                if (p?.mouse_position != null && p.mouse_position.Length >= 2)
+                {
+                    mouseX = p.mouse_position[0];
+                    mouseY = p.mouse_position[1];
+                }
+                else
+                {
+                    // Get Game View center as default position
+                    var gameViewType = System.Type.GetType("UnityEditor.GameView, UnityEditor");
+                    if (gameViewType != null)
+                    {
+                        var getWindow = typeof(EditorWindow).GetMethod("GetWindow", new[] { typeof(System.Type), typeof(bool) });
+                        if (getWindow != null)
+                        {
+                            var gameView = getWindow.Invoke(null, new object[] { gameViewType, false }) as EditorWindow;
+                            if (gameView != null)
+                            {
+                                Rect rect = gameView.position;
+                                mouseX = rect.x + rect.width / 2;
+                                mouseY = rect.y + rect.height / 2 + 40; // Offset for tab + toolbar
+                                ConsoleLog($"[CommandExecutor] Using Game View center: ({mouseX}, {mouseY})");
+                            }
+                        }
+                    }
+                }
 
                 if (inputSystem == "new")
                 {
@@ -695,13 +901,14 @@ namespace ClaudeAgent
                     {
                         if (action == "click")
                         {
-                            var releaseControl = buttonControl;
-                            EditorApplication.delayCall += () =>
+                            ScheduleDelayedRelease(new DelayedRelease
                             {
-                                if (EditorApplication.isPlaying)
-                                    SetKeyState(releaseControl, false);
-                            };
-                            result.Append(" (will release next frame)");
+                                releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                                button = button,
+                                isNewInputSystem = true,
+                                control = buttonControl
+                            });
+                            result.Append($" (will release after {releaseDelay * 1000f:0}ms)");
                         }
                         else
                         {
@@ -722,14 +929,15 @@ namespace ClaudeAgent
                     {
                         if (action == "click")
                         {
-                            string btn = button;
-                            float x = mouseX, y = mouseY;
-                            EditorApplication.delayCall += () =>
+                            ScheduleDelayedRelease(new DelayedRelease
                             {
-                                if (EditorApplication.isPlaying)
-                                    SendOSMouseEvent(btn, "up", x, y);
-                            };
-                            result.Append(" (will release next frame)");
+                                releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                                button = button,
+                                mouseX = mouseX,
+                                mouseY = mouseY,
+                                isNewInputSystem = false
+                            });
+                            result.Append($" (will release after {releaseDelay * 1000f:0}ms)");
                         }
                         else
                         {
@@ -918,6 +1126,8 @@ namespace ClaudeAgent
         {
             string key = input["key"]?.ToString();
             string action = input["action"]?.ToString()?.ToLower() ?? "tap";
+            float durationMs = input["duration"]?.ToObject<float>() ?? 100f;
+            float releaseDelay = durationMs / 1000f;
 
             if (string.IsNullOrEmpty(key)) return;
 
@@ -947,15 +1157,13 @@ namespace ClaudeAgent
 
                 if (action == "tap")
                 {
-                    var releaseControl = keyControl;
-                    EditorApplication.delayCall += () =>
+                    ScheduleDelayedRelease(new DelayedRelease
                     {
-                        if (EditorApplication.isPlaying)
-                        {
-                            SetKeyState(releaseControl, false);
-                            ConsoleLog($"[CommandExecutor] Key up (tap): {key}");
-                        }
-                    };
+                        releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                        key = key,
+                        isNewInputSystem = true,
+                        control = keyControl
+                    });
                 }
             }
             else // OS-level
@@ -974,15 +1182,12 @@ namespace ClaudeAgent
 
                 if (action == "tap")
                 {
-                    string keyToRelease = key;
-                    EditorApplication.delayCall += () =>
+                    ScheduleDelayedRelease(new DelayedRelease
                     {
-                        if (EditorApplication.isPlaying)
-                        {
-                            SendOSKeyEvent(keyToRelease, false);
-                            ConsoleLog($"[CommandExecutor] Key up (tap): {keyToRelease}");
-                        }
-                    };
+                        releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                        key = key,
+                        isNewInputSystem = false
+                    });
                 }
             }
         }
@@ -991,6 +1196,8 @@ namespace ClaudeAgent
         {
             string button = input["button"]?.ToString()?.ToLower() ?? "left";
             string action = input["action"]?.ToString()?.ToLower() ?? "click";
+            float durationMs = input["duration"]?.ToObject<float>() ?? 100f;
+            float releaseDelay = durationMs / 1000f;
 
             var positionToken = input["position"] as JArray;
             float x = positionToken != null && positionToken.Count >= 2 ? positionToken[0].ToObject<float>() : 0;
@@ -1021,15 +1228,13 @@ namespace ClaudeAgent
 
                 if (action == "click")
                 {
-                    var releaseControl = buttonControl;
-                    EditorApplication.delayCall += () =>
+                    ScheduleDelayedRelease(new DelayedRelease
                     {
-                        if (EditorApplication.isPlaying)
-                        {
-                            SetKeyState(releaseControl, false);
-                            ConsoleLog($"[CommandExecutor] Mouse {button} up (click)");
-                        }
-                    };
+                        releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                        button = button,
+                        isNewInputSystem = true,
+                        control = buttonControl
+                    });
                 }
             }
             else // OS-level
@@ -1048,16 +1253,14 @@ namespace ClaudeAgent
 
                 if (action == "click")
                 {
-                    string btn = button;
-                    float px = x, py = y;
-                    EditorApplication.delayCall += () =>
+                    ScheduleDelayedRelease(new DelayedRelease
                     {
-                        if (EditorApplication.isPlaying)
-                        {
-                            SendOSMouseEvent(btn, "up", px, py);
-                            ConsoleLog($"[CommandExecutor] Mouse {btn} up (click)");
-                        }
-                    };
+                        releaseTime = Time.realtimeSinceStartup + releaseDelay,
+                        button = button,
+                        mouseX = x,
+                        mouseY = y,
+                        isNewInputSystem = false
+                    });
                 }
             }
         }

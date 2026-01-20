@@ -39,7 +39,7 @@ class WindowManagerBase(ABC):
         self.unity_title = None
 
     @abstractmethod
-    def find_unity_window(self, exact_title: str = None) -> bool:
+    def find_unity_window(self, exact_title: str = None, pid: int = None) -> bool:
         """Unityウィンドウを検索"""
         pass
 
@@ -66,6 +66,7 @@ class MacWindowManager(WindowManagerBase):
         super().__init__()
         self.original_app = None
         self.unity_found = False
+        self.unity_pid = None
 
     def _run_applescript(self, script: str) -> str:
         """AppleScriptを実行"""
@@ -81,21 +82,38 @@ class MacWindowManager(WindowManagerBase):
             print(f"⚠ AppleScript error: {e}")
             return ""
 
-    def find_unity_window(self, exact_title: str = None) -> bool:
+    def find_unity_window(self, exact_title: str = None, pid: int = None) -> bool:
         """Unityウィンドウを検索"""
-        # Unityが実行中かチェック
-        script = '''
-        tell application "System Events"
-            set unityProcs to (name of every process whose name contains "Unity")
-            if (count of unityProcs) > 0 then
-                return "found"
-            else
-                return "not_found"
-            end if
-        end tell
-        '''
-        result = self._run_applescript(script)
-        self.unity_found = (result == "found")
+        self.unity_pid = pid
+
+        if pid:
+            # PIDが指定されていれば、そのプロセスが存在するか確認
+            script = f'''
+            tell application "System Events"
+                set unityProcs to (every process whose unix id is {pid})
+                if (count of unityProcs) > 0 then
+                    return "found"
+                else
+                    return "not_found"
+                end if
+            end tell
+            '''
+            result = self._run_applescript(script)
+            self.unity_found = (result == "found")
+        else:
+            # PIDがない場合は従来の方法
+            script = '''
+            tell application "System Events"
+                set unityProcs to (name of every process whose name contains "Unity")
+                if (count of unityProcs) > 0 then
+                    return "found"
+                else
+                    return "not_found"
+                end if
+            end tell
+            '''
+            result = self._run_applescript(script)
+            self.unity_found = (result == "found")
 
         if self.unity_found:
             self.unity_title = exact_title or "Unity"
@@ -117,9 +135,19 @@ class MacWindowManager(WindowManagerBase):
         if not self.unity_found:
             return False
 
-        script = '''
-        tell application "Unity" to activate
-        '''
+        if self.unity_pid:
+            # PIDを使用して特定のUnityプロセスをアクティブ化
+            script = f'''
+            tell application "System Events"
+                set unityProc to first process whose unix id is {self.unity_pid}
+                set frontmost of unityProc to true
+            end tell
+            '''
+        else:
+            # 従来の方法
+            script = '''
+            tell application "Unity" to activate
+            '''
         self._run_applescript(script)
         return True
 
@@ -168,8 +196,9 @@ class WindowsWindowManager(WindowManagerBase):
         self.win32gui.EnumWindows(callback, None)
         return result
 
-    def find_unity_window(self, exact_title: str = None) -> bool:
+    def find_unity_window(self, exact_title: str = None, pid: int = None) -> bool:
         """Unityウィンドウを検索"""
+        # TODO: Windows版もPIDでウィンドウを検索するように改善可能
         if exact_title:
             # 完全一致検索
             windows = self.find_window_by_title(exact_title)
@@ -247,7 +276,7 @@ class WindowsWindowManager(WindowManagerBase):
 class DummyWindowManager(WindowManagerBase):
     """ウィンドウ管理をスキップするダミークラス（Linux等）"""
 
-    def find_unity_window(self, exact_title: str = None) -> bool:
+    def find_unity_window(self, exact_title: str = None, pid: int = None) -> bool:
         print("⚠ Window management not supported on this OS, skipping...")
         return False
 
@@ -322,8 +351,26 @@ def get_server_uri(port: int = None, project: str = None) -> str:
     return f"ws://127.0.0.1:{DEFAULT_PORT}/"
 
 
-async def get_unity_window_title(server_uri: str) -> str:
-    """Unity Command Serverからウィンドウタイトルを取得"""
+async def get_unity_info(server_uri: str) -> dict:
+    """Unity Command ServerからUnity情報（タイトル、PID）を取得"""
+    try:
+        async with websockets.connect(server_uri) as websocket:
+            request = {"message": '{"operation":"get_unity_info","params":{}}'}
+            await websocket.send(json.dumps(request))
+            response_str = await asyncio.wait_for(websocket.recv(), timeout=5)
+            response = json.loads(response_str)
+            if response.get("success"):
+                result = response.get("result", "")
+                # 結果がJSON文字列の場合はパース
+                if isinstance(result, str):
+                    try:
+                        return json.loads(result)
+                    except:
+                        return {"title": result}
+                return result
+    except Exception:
+        pass
+    # フォールバック: 旧APIを試す
     try:
         async with websockets.connect(server_uri) as websocket:
             request = {"message": '{"operation":"get_window_title","params":{}}'}
@@ -331,13 +378,14 @@ async def get_unity_window_title(server_uri: str) -> str:
             response_str = await asyncio.wait_for(websocket.recv(), timeout=5)
             response = json.loads(response_str)
             if response.get("success"):
-                return response.get("result", "")
+                return {"title": response.get("result", "")}
     except Exception:
         pass
     return None
 
 
-async def send_command(command: str, window_manager: WindowManagerBase, server_uri: str) -> dict:
+async def send_command(command: str, window_manager: WindowManagerBase, server_uri: str,
+                       no_restore: bool = False, restore_delay: float = 0.3) -> dict:
     """
     Unity Command ServerにJSONコマンドを送信し、結果を受け取る
 
@@ -345,6 +393,8 @@ async def send_command(command: str, window_manager: WindowManagerBase, server_u
         command: JSONコマンド文字列
         window_manager: ウィンドウ管理オブジェクト
         server_uri: WebSocket server URI
+        no_restore: Trueの場合、元のウィンドウに戻さない
+        restore_delay: 元のウィンドウに戻すまでの待機時間（秒）
 
     Returns:
         dict: サーバーからの応答（success, result, error, timestamp）
@@ -352,10 +402,12 @@ async def send_command(command: str, window_manager: WindowManagerBase, server_u
     # 現在のウィンドウを保存
     window_manager.save_current_window()
 
-    # Unityウィンドウを検索
-    unity_title = await get_unity_window_title(server_uri)
-    if unity_title:
-        window_manager.find_unity_window(unity_title)
+    # Unityウィンドウを検索（PIDを使用）
+    unity_info = await get_unity_info(server_uri)
+    if unity_info:
+        title = unity_info.get("title")
+        pid = unity_info.get("pid")
+        window_manager.find_unity_window(title, pid)
     else:
         window_manager.find_unity_window()
 
@@ -390,9 +442,12 @@ async def send_command(command: str, window_manager: WindowManagerBase, server_u
             return response
     finally:
         # 元のウィンドウに戻す
-        time.sleep(0.3)  # 処理完了待機
-        print(f"🪟 Restoring original window")
-        window_manager.restore_original()
+        if not no_restore:
+            time.sleep(restore_delay)
+            print(f"🪟 Restoring original window")
+            window_manager.restore_original()
+        else:
+            print(f"🪟 Keeping Unity in foreground (--no-restore)")
 
 
 def validate_batch_command(parsed_json: dict) -> tuple:
@@ -490,6 +545,8 @@ Examples:
     parser.add_argument("command", help="JSON command to send")
     parser.add_argument("--port", "-p", type=int, help=f"Server port (default: {DEFAULT_PORT})")
     parser.add_argument("--project", "-P", help="Unity project path (reads port from Library/ClaudeAgent/port.txt)")
+    parser.add_argument("--no-restore", "-n", action="store_true", help="Don't restore original window after command")
+    parser.add_argument("--restore-delay", "-d", type=float, default=0.3, help="Delay before restoring window (default: 0.3s)")
 
     args = parser.parse_args()
 
@@ -513,7 +570,11 @@ Examples:
     window_manager = create_window_manager()
 
     try:
-        response = asyncio.run(send_command(args.command, window_manager, server_uri))
+        response = asyncio.run(send_command(
+            args.command, window_manager, server_uri,
+            no_restore=args.no_restore,
+            restore_delay=args.restore_delay
+        ))
         format_result(response)
 
         # 成功/失敗に応じた終了コード

@@ -17,6 +17,7 @@ namespace ClaudeAgent
             RegisterCommand("get_selection", GetSelection);
             RegisterCommand("set_selection", SetSelection);
             RegisterCommand("get_window_title", GetWindowTitle);
+            RegisterCommand("get_unity_info", GetUnityInfo);
             RegisterCommand("playmode", PlayMode);
         }
 
@@ -177,6 +178,50 @@ namespace ClaudeAgent
                 ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }
+        }
+
+        /// <summary>
+        /// Gets Unity info including window title and process ID for window activation
+        /// </summary>
+        private (bool, string) GetUnityInfo(CommandParams p)
+        {
+            try
+            {
+                // Build Unity window title
+                var scene = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene();
+                string sceneName = string.IsNullOrEmpty(scene.name) ? "Untitled" : scene.name;
+                string title = $"{Application.productName} - {sceneName} - Unity {Application.unityVersion}";
+
+                // Get process ID
+                int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+
+                // Return as JSON object
+                var result = new {
+                    title = title,
+                    pid = pid,
+                    productName = Application.productName,
+                    unityVersion = Application.unityVersion
+                };
+
+                string json = JsonUtility.ToJson(new UnityInfoResult { title = title, pid = pid, productName = Application.productName, unityVersion = Application.unityVersion });
+                ConsoleLog($"[CommandExecutor] Unity info: {json}");
+                return (true, json);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error getting Unity info: {e.Message}";
+                ConsoleLogError($"[CommandExecutor] {error}");
+                return (false, error);
+            }
+        }
+
+        [Serializable]
+        private class UnityInfoResult
+        {
+            public string title;
+            public int pid;
+            public string productName;
+            public string unityVersion;
         }
 
         /// <summary>

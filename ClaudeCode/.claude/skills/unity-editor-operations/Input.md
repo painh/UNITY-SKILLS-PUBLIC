@@ -36,6 +36,7 @@ Simulate keyboard input (press, release, or tap a key).
 |-----------|------|----------|-------------|
 | `key` | string | Yes | Key name (e.g., "W", "Space", "LeftCtrl") |
 | `action` | string | No | "press", "release", or "tap" (default: "tap") |
+| `duration` | number | No | Time to hold key before release in **milliseconds** (default: 100ms). Only used with "tap" action. |
 | `input_system` | string | No | "os" (default), "auto", or "new" |
 
 ### Supported Keys
@@ -51,8 +52,11 @@ Simulate keyboard input (press, release, or tap a key).
 ### Example
 
 ```bash
-# Tap W key (press and release)
+# Tap W key (press and release after 100ms default)
 python send_message.py '{"operation":"simulate_key","params":{"key":"W","action":"tap"}}'
+
+# Tap J key with 500ms hold duration
+python send_message.py '{"operation":"simulate_key","params":{"key":"J","action":"tap","duration":500}}'
 
 # Hold down Space using OS-level input (for Legacy Input projects)
 python send_message.py '{"operation":"simulate_key","params":{"key":"Space","action":"press","input_system":"os"}}'
@@ -66,7 +70,7 @@ python send_message.py '{"operation":"simulate_key","params":{"key":"Space","act
 ```json
 {
   "success": true,
-  "result": "Pressed key: W (will release next frame) [os]"
+  "result": "[os] Pressed key: W (will release after 100ms)"
 }
 ```
 
@@ -82,6 +86,7 @@ Simulate mouse button clicks and position.
 |-----------|------|----------|-------------|
 | `button` | string | No | "left", "right", or "middle" (default: "left") |
 | `action` | string | No | "click", "down", "up", or "doubleclick" (default: "click") |
+| `duration` | number | No | Time to hold button before release in **milliseconds** (default: 100ms). Only used with "click" action. |
 | `mouse_position` | float[2] | No | Screen position [x, y] |
 | `input_system` | string | No | "os" (default), "auto", or "new" |
 
@@ -103,7 +108,7 @@ python send_message.py '{"operation":"simulate_mouse","params":{"button":"left",
 ```json
 {
   "success": true,
-  "result": "Mouse left button down (will release next frame) at (960, 540) [os]"
+  "result": "[os] Mouse left button down (will release after 100ms) at (960, 540)"
 }
 ```
 
@@ -125,17 +130,24 @@ Execute a sequence of inputs with timing control.
 **Key input:**
 ```json
 {"type": "key", "key": "W", "action": "down"}
+{"type": "key", "key": "J", "action": "tap", "duration": 200}
 ```
+- `action`: "down", "up", "press", "release", or "tap"
+- `duration`: (optional) hold time in **ms** for "tap" action (default: 100ms)
 
 **Mouse input:**
 ```json
 {"type": "mouse", "button": "left", "action": "click", "position": [960, 540]}
+{"type": "mouse", "button": "left", "action": "click", "duration": 300}
 ```
+- `action`: "down", "up", or "click"
+- `duration`: (optional) hold time in **ms** for "click" action (default: 100ms)
 
 **Wait:**
 ```json
 {"type": "wait", "duration": 0.5}
 ```
+- `duration`: wait time in **seconds**
 
 ### Example
 
@@ -154,7 +166,7 @@ python send_message.py '{"operation":"simulate_input_sequence","params":{"input_
 ```json
 {
   "success": true,
-  "result": "Started input sequence with 4 steps [os]"
+  "result": "Started input sequence with 4 steps (using os)"
 }
 ```
 
