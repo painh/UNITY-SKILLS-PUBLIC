@@ -54,6 +54,7 @@ namespace ClaudeAgent
             RegisterLayerCommands();
             RegisterPhysicsCommands();
             RegisterInputCommands();
+            RegisterLocalizationCommands();
         }
 
         /// <summary>
@@ -445,6 +446,14 @@ namespace ClaudeAgent
                 {
                     p.inputs = inputsToken as JArray;
                     ConsoleLog($"[CommandExecutor] Parsed inputs: {((JArray)p.inputs).Count} steps");
+                }
+
+                // Parse values (object type: for localization entries {locale: value})
+                var valuesToken = paramsObj["values"];
+                if (valuesToken != null && valuesToken.Type == JTokenType.Object)
+                {
+                    p.values = valuesToken as JObject;
+                    ConsoleLog($"[CommandExecutor] Parsed values: {((JObject)p.values).Count} locales");
                 }
             }
             catch (Exception e)
@@ -1124,6 +1133,15 @@ namespace ClaudeAgent
             public float[] mouse_position;         // Mouse position [x, y]
             public object inputs;                  // Input sequence array (for simulate_input_sequence)
             public string input_system;            // Input system: "os" (default), "auto", or "new"
+
+            // Localization parameters
+            public string[] locales;               // Locale codes array (e.g., ["ko", "en", "ja"])
+            public string default_locale;          // Default locale code
+            public string table_name;              // String table name
+            public string entry_key;               // Table entry key
+            public object values;                  // Entry values by locale (JSON object: {"ko": "한국어", "en": "English"})
+            public string csv_path;                // CSV file path for import
+            public string settings_path;           // LocalizationSettings asset path
         }
     }
 }

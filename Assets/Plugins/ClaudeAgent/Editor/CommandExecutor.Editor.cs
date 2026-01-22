@@ -284,19 +284,25 @@ namespace ClaudeAgent
                     case "play":
                         if (EditorApplication.isPlaying)
                         {
-                            string warning = "[WARNING] Already in play mode";
+                            string warning = "[WARNING] Already in play mode. Remember to stop play mode after testing.";
                             ConsoleLogWarning($"[CommandExecutor] {warning}");
                             return (true, warning);
                         }
                         if (EditorApplication.isCompiling)
                         {
-                            string error = "Cannot enter play mode while compiling";
+                            string error = "Cannot enter play mode while compiling. Wait for compilation to finish.";
+                            ConsoleLogError($"[CommandExecutor] {error}");
+                            return (false, error);
+                        }
+                        if (EditorUtility.scriptCompilationFailed)
+                        {
+                            string error = "Cannot enter play mode due to script compilation errors. Fix the errors first.";
                             ConsoleLogError($"[CommandExecutor] {error}");
                             return (false, error);
                         }
                         EditorApplication.EnterPlaymode();
                         ConsoleLog("[CommandExecutor] Entered play mode");
-                        return (true, "Entered play mode");
+                        return (true, "Entered play mode. Remember to stop play mode after testing.");
 
                     case "stop":
                         if (!EditorApplication.isPlaying)
@@ -368,10 +374,25 @@ namespace ClaudeAgent
             sb.AppendLine($"  Is Playing: {EditorApplication.isPlaying}");
             sb.AppendLine($"  Is Paused: {EditorApplication.isPaused}");
             sb.AppendLine($"  Is Compiling: {EditorApplication.isCompiling}");
+            sb.AppendLine($"  Has Compile Errors: {EditorUtility.scriptCompilationFailed}");
 
-            string state = !EditorApplication.isPlaying ? "Edit Mode"
-                : EditorApplication.isPaused ? "Play Mode (Paused)"
-                : "Play Mode (Running)";
+            string state;
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                state = "Edit Mode (Compile Errors - cannot enter play mode)";
+            }
+            else if (!EditorApplication.isPlaying)
+            {
+                state = "Edit Mode";
+            }
+            else if (EditorApplication.isPaused)
+            {
+                state = "Play Mode (Paused)";
+            }
+            else
+            {
+                state = "Play Mode (Running)";
+            }
             sb.AppendLine($"  State: {state}");
 
             ConsoleLog("[CommandExecutor] Retrieved play mode state");
