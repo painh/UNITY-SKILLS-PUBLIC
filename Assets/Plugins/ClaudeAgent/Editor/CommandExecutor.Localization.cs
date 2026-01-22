@@ -539,12 +539,23 @@ namespace ClaudeAgent
                     return Error($"StringTableCollection not found: {p.table_name}");
                 }
 
-                var getTableMethod = _stringTableCollectionType.GetMethod("GetTable",
-                    BindingFlags.Public | BindingFlags.Instance, null,
-                    new[] { typeof(string) }, null);
+                // Use StringTables property to get all tables
+                var stringTablesProp = _stringTableCollectionType.GetProperty("StringTables",
+                    BindingFlags.Public | BindingFlags.Instance);
 
                 int totalAdded = 0;
                 var errors = new List<string>();
+
+                if (stringTablesProp == null)
+                {
+                    return Error("StringTables property not found");
+                }
+
+                var tables = stringTablesProp.GetValue(collection) as System.Collections.IList;
+                if (tables == null || tables.Count == 0)
+                {
+                    return Error("No locale tables found in collection");
+                }
 
                 foreach (JObject entry in entries)
                 {
@@ -562,20 +573,31 @@ namespace ClaudeAgent
                         string localeCode = prop.Name;
                         string value = prop.Value.ToString();
 
-                        if (getTableMethod != null)
+                        // Find table matching this locale
+                        foreach (var table in tables)
                         {
-                            var table = getTableMethod.Invoke(collection, new object[] { localeCode });
-                            if (table != null)
-                            {
-                                var addEntryMethod = _stringTableType?.GetMethod("AddEntry",
-                                    BindingFlags.Public | BindingFlags.Instance, null,
-                                    new[] { typeof(string), typeof(string) }, null);
+                            if (table == null) continue;
 
-                                if (addEntryMethod != null)
+                            var localeIdProp = _stringTableType?.GetProperty("LocaleIdentifier");
+                            if (localeIdProp != null)
+                            {
+                                var localeId = localeIdProp.GetValue(table);
+                                var codeProp = localeId?.GetType().GetProperty("Code");
+                                var tableLocaleCode = codeProp?.GetValue(localeId) as string;
+
+                                if (tableLocaleCode == localeCode)
                                 {
-                                    addEntryMethod.Invoke(table, new object[] { key, value });
-                                    EditorUtility.SetDirty(table as UnityEngine.Object);
-                                    totalAdded++;
+                                    var addEntryMethod = _stringTableType?.GetMethod("AddEntry",
+                                        BindingFlags.Public | BindingFlags.Instance, null,
+                                        new[] { typeof(string), typeof(string) }, null);
+
+                                    if (addEntryMethod != null)
+                                    {
+                                        addEntryMethod.Invoke(table, new object[] { key, value });
+                                        EditorUtility.SetDirty(table as UnityEngine.Object);
+                                        totalAdded++;
+                                    }
+                                    break;
                                 }
                             }
                         }
