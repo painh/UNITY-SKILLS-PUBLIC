@@ -97,7 +97,7 @@ Several operations support `position_space`, `rotation_space`, and `scale_space`
 
 Result messages show which space was used: `Created sphere: MySphere (position: world, scale: local)`
 
-## Supported Operations (64 total)
+## Supported Operations (82 total)
 
 > **Looking up operation details**: Use `Grep "### operation_name" File.md -A 25` to retrieve only the specific operation section instead of reading the entire file. This reduces token consumption.
 
@@ -241,6 +241,40 @@ Result messages show which space was used: `Created sphere: MySphere (position: 
 | Operation | Description |
 |-----------|-------------|
 | `create_fitted` | [Create geometry fitted to vertex positions](VisualGuideModeling.md#create_fitted) ※VGM: geometry |
+
+### Layer Operations
+| Operation | Description |
+|-----------|-------------|
+| `set_layer` | [Set GameObject layer](Layer.md#set_layer) |
+| `get_layers` | [Get all layers info](Layer.md#get_layers) |
+| `create_layer` | [Create new layer](Layer.md#create_layer) |
+| `rename_layer` | [Rename existing layer](Layer.md#rename_layer) |
+
+### Physics Operations
+| Operation | Description |
+|-----------|-------------|
+| `get_physics_settings` | [Get physics settings](Physics.md#get_physics_settings) |
+| `set_physics_settings` | [Set physics settings](Physics.md#set_physics_settings) |
+| `get_layer_collision_matrix` | [Get layer collision matrix](Physics.md#get_layer_collision_matrix) |
+| `set_layer_collision` | [Set layer collision](Physics.md#set_layer_collision) |
+
+### Input Simulation Operations (Play Mode Only)
+| Operation | Description |
+|-----------|-------------|
+| `simulate_key` | [Simulate keyboard input](Input.md#simulate_key) |
+| `simulate_mouse` | [Simulate mouse input](Input.md#simulate_mouse) |
+| `simulate_input_sequence` | [Execute input sequence](Input.md#simulate_input_sequence) |
+
+### Localization Operations
+| Operation | Description |
+|-----------|-------------|
+| `get_localization_info` | [Get localization system info](Localization.md#get_localization_info) |
+| `create_localization_settings` | [Create LocalizationSettings with locales](Localization.md#create_localization_settings) |
+| `create_string_table` | [Create StringTableCollection](Localization.md#create_string_table) |
+| `list_string_tables` | [List all string tables](Localization.md#list_string_tables) |
+| `add_string_table_entry` | [Add single entry to table](Localization.md#add_string_table_entry) |
+| `add_string_table_entries` | [Add multiple entries to table](Localization.md#add_string_table_entries) |
+| `import_string_table_csv` | [Import entries from CSV](Localization.md#import_string_table_csv) |
 
 ## Batch Operations (Meta-Operation)
 
