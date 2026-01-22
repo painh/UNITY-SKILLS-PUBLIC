@@ -43,11 +43,9 @@ scripts/                               # 빌드 스크립트
      - GitHub Release 생성
      - Release notes 자동 생성
 
-### 3. 사용자 스킬 업데이트
+### 3. 로컬 배포 (선택)
 
-5. **Claude 사용자 스코프 스킬 업데이트**
-   - `~/.claude/skills/` 또는 사용자 정의 위치의 스킬 파일 업데이트
-   - 프로젝트의 `ClaudeCode/.claude/skills/` 내용을 사용자 스코프에 복사
+로컬 테스트 프로젝트 동기화 및 사용자 스킬 업데이트는 `CLAUDE.local.md` 참조 (gitignore됨)
 
 ## 명령어 카테고리
 
