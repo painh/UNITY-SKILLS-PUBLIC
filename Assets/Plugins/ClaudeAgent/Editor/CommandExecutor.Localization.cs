@@ -48,14 +48,14 @@ namespace ClaudeAgent
 
             try
             {
-                // Try to load types from Localization package
-                _localizationSettingsType = Type.GetType("UnityEngine.Localization.Settings.LocalizationSettings, Unity.Localization");
-                _localeType = Type.GetType("UnityEngine.Localization.Locale, Unity.Localization");
-                _stringTableCollectionType = Type.GetType("UnityEngine.Localization.Tables.StringTableCollection, Unity.Localization");
-                _sharedTableDataType = Type.GetType("UnityEngine.Localization.Tables.SharedTableData, Unity.Localization");
-                _stringTableType = Type.GetType("UnityEngine.Localization.Tables.StringTable, Unity.Localization");
-                _localizationEditorSettingsType = Type.GetType("UnityEditor.Localization.LocalizationEditorSettings, Unity.Localization.Editor");
-                _localeGeneratorType = Type.GetType("UnityEditor.Localization.LocaleGenerator, Unity.Localization.Editor");
+                // Search all loaded assemblies for Localization types
+                _localizationSettingsType = FindTypeInAssemblies("UnityEngine.Localization.Settings.LocalizationSettings");
+                _localeType = FindTypeInAssemblies("UnityEngine.Localization.Locale");
+                _stringTableCollectionType = FindTypeInAssemblies("UnityEditor.Localization.StringTableCollection");
+                _sharedTableDataType = FindTypeInAssemblies("UnityEngine.Localization.Tables.SharedTableData");
+                _stringTableType = FindTypeInAssemblies("UnityEngine.Localization.Tables.StringTable");
+                _localizationEditorSettingsType = FindTypeInAssemblies("UnityEditor.Localization.LocalizationEditorSettings");
+                _localeGeneratorType = FindTypeInAssemblies("UnityEditor.Localization.LocaleGenerator");
 
                 _localizationAvailable = _localizationSettingsType != null &&
                                          _localeType != null &&
@@ -78,6 +78,44 @@ namespace ClaudeAgent
             }
 
             return _localizationAvailable;
+        }
+
+        /// <summary>
+        /// Finds a type by full name in all loaded assemblies
+        /// </summary>
+        private Type FindTypeInAssemblies(string fullTypeName)
+        {
+            // First try direct Type.GetType with assembly name
+            var directType = Type.GetType(fullTypeName + ", Unity.Localization");
+            if (directType != null)
+                return directType;
+
+            // Search all loaded assemblies
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    // Check if this is a Localization assembly
+                    if (assembly.FullName.Contains("Localization"))
+                    {
+                        ConsoleLog($"[CommandExecutor] Found Localization assembly: {assembly.FullName}");
+                    }
+
+                    var type = assembly.GetType(fullTypeName);
+                    if (type != null)
+                    {
+                        ConsoleLog($"[CommandExecutor] Found type {fullTypeName} in {assembly.FullName}");
+                        return type;
+                    }
+                }
+                catch
+                {
+                    // Ignore assembly load errors
+                }
+            }
+
+            ConsoleLogWarning($"[CommandExecutor] Type not found: {fullTypeName}");
+            return null;
         }
 
         /// <summary>
@@ -197,22 +235,31 @@ namespace ClaudeAgent
 
             try
             {
-                // Use LocaleGenerator to create locale
-                var generateMethod = _localeGeneratorType?.GetMethod("CreateLocale",
-                    BindingFlags.Public | BindingFlags.Static, null,
-                    new[] { typeof(string) }, null);
-
-                if (generateMethod != null)
+                // Use Locale.CreateLocale(LocaleIdentifier) to create locale
+                var localeIdentifierType = FindTypeInAssemblies("UnityEngine.Localization.LocaleIdentifier");
+                if (localeIdentifierType != null && _localeType != null)
                 {
-                    var locale = generateMethod.Invoke(null, new object[] { localeCode });
-                    if (locale != null)
+                    // Create LocaleIdentifier from string code
+                    var identifier = Activator.CreateInstance(localeIdentifierType, new object[] { localeCode });
+
+                    // Call Locale.CreateLocale(LocaleIdentifier)
+                    var createLocaleMethod = _localeType.GetMethod("CreateLocale",
+                        BindingFlags.Public | BindingFlags.Static, null,
+                        new[] { localeIdentifierType }, null);
+
+                    if (createLocaleMethod != null)
                     {
-                        AssetDatabase.CreateAsset(locale as UnityEngine.Object, localePath);
-                        return locale;
+                        var locale = createLocaleMethod.Invoke(null, new object[] { identifier });
+                        if (locale != null)
+                        {
+                            AssetDatabase.CreateAsset(locale as UnityEngine.Object, localePath);
+                            ConsoleLog($"[CommandExecutor] Created locale: {localeCode} at {localePath}");
+                            return locale;
+                        }
                     }
                 }
 
-                // Fallback: create locale manually using SystemLanguage
+                // Fallback: create locale manually
                 var locale2 = ScriptableObject.CreateInstance(_localeType);
 
                 // Set the identifier
@@ -292,30 +339,30 @@ namespace ClaudeAgent
                 var getLocalesMethod = _localizationEditorSettingsType.GetMethod("GetLocales",
                     BindingFlags.Public | BindingFlags.Static);
 
-                if (getLocalesMethod != null)
+                var localeIdentifierType = FindTypeInAssemblies("UnityEngine.Localization.LocaleIdentifier");
+
+                if (getLocalesMethod != null && localeIdentifierType != null)
                 {
                     var locales = getLocalesMethod.Invoke(null, null) as System.Collections.IList;
                     if (locales != null && locales.Count > 0)
                     {
+                        // AddNewTable takes LocaleIdentifier, not string
                         var addTableMethod = _stringTableCollectionType.GetMethod("AddNewTable",
                             BindingFlags.Public | BindingFlags.Instance, null,
-                            new[] { typeof(string) }, null);
+                            new[] { localeIdentifierType }, null);
 
                         foreach (var locale in locales)
                         {
                             var identifierProp = _localeType.GetProperty("Identifier");
-                            var codeField = identifierProp.PropertyType.GetProperty("Code");
-                            var identifier = identifierProp.GetValue(locale);
-                            var code = codeField.GetValue(identifier) as string;
+                            var identifier = identifierProp.GetValue(locale); // This is LocaleIdentifier
 
                             if (addTableMethod != null)
                             {
-                                var table = addTableMethod.Invoke(collection, new object[] { code });
+                                ConsoleLog($"[CommandExecutor] Adding table for locale: {identifier}");
+                                var table = addTableMethod.Invoke(collection, new object[] { identifier });
                                 if (table != null)
                                 {
-                                    // Save table as separate asset
-                                    string tableAssetPath = $"{tablePath}/{p.table_name}_{code}.asset";
-                                    AssetDatabase.CreateAsset(table as UnityEngine.Object, tableAssetPath);
+                                    ConsoleLog($"[CommandExecutor] Table created: {table}");
                                 }
                             }
                         }
@@ -386,31 +433,50 @@ namespace ClaudeAgent
                 }
 
                 // Add entry to each locale's table
-                var getTableMethod = _stringTableCollectionType.GetMethod("GetTable",
-                    BindingFlags.Public | BindingFlags.Instance, null,
-                    new[] { typeof(string) }, null);
+                // Use StringTables property to get all tables, then find by LocaleIdentifier
+                var stringTablesProp = _stringTableCollectionType.GetProperty("StringTables",
+                    BindingFlags.Public | BindingFlags.Instance);
 
                 int addedCount = 0;
-                foreach (var prop in valuesObj.Properties())
+                if (stringTablesProp != null)
                 {
-                    string localeCode = prop.Name;
-                    string value = prop.Value.ToString();
-
-                    if (getTableMethod != null)
+                    var tables = stringTablesProp.GetValue(collection) as System.Collections.IList;
+                    if (tables != null)
                     {
-                        var table = getTableMethod.Invoke(collection, new object[] { localeCode });
-                        if (table != null)
+                        foreach (var prop in valuesObj.Properties())
                         {
-                            // Add entry to table
-                            var addEntryMethod = _stringTableType?.GetMethod("AddEntry",
-                                BindingFlags.Public | BindingFlags.Instance, null,
-                                new[] { typeof(string), typeof(string) }, null);
+                            string localeCode = prop.Name;
+                            string value = prop.Value.ToString();
 
-                            if (addEntryMethod != null)
+                            // Find table matching this locale
+                            foreach (var table in tables)
                             {
-                                addEntryMethod.Invoke(table, new object[] { p.entry_key, value });
-                                EditorUtility.SetDirty(table as UnityEngine.Object);
-                                addedCount++;
+                                if (table == null) continue;
+
+                                // Get LocaleIdentifier from table
+                                var localeIdProp = _stringTableType?.GetProperty("LocaleIdentifier");
+                                if (localeIdProp != null)
+                                {
+                                    var localeId = localeIdProp.GetValue(table);
+                                    var codeProp = localeId?.GetType().GetProperty("Code");
+                                    var tableLocaleCode = codeProp?.GetValue(localeId) as string;
+
+                                    if (tableLocaleCode == localeCode)
+                                    {
+                                        // Add entry to table
+                                        var addEntryMethod = _stringTableType?.GetMethod("AddEntry",
+                                            BindingFlags.Public | BindingFlags.Instance, null,
+                                            new[] { typeof(string), typeof(string) }, null);
+
+                                        if (addEntryMethod != null)
+                                        {
+                                            addEntryMethod.Invoke(table, new object[] { p.entry_key, value });
+                                            EditorUtility.SetDirty(table as UnityEngine.Object);
+                                            addedCount++;
+                                        }
+                                        break; // Found the right locale, move to next
+                                    }
+                                }
                             }
                         }
                     }
