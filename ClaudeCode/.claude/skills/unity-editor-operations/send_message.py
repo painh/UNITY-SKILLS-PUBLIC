@@ -385,7 +385,8 @@ async def get_unity_info(server_uri: str) -> dict:
 
 
 async def send_command(command: str, window_manager: WindowManagerBase, server_uri: str,
-                       no_restore: bool = False, restore_delay: float = 0.3) -> dict:
+                       no_restore: bool = False, restore_delay: float = 0.3,
+                       no_focus: bool = False) -> dict:
     """
     Unity Command ServerにJSONコマンドを送信し、結果を受け取る
 
@@ -395,29 +396,34 @@ async def send_command(command: str, window_manager: WindowManagerBase, server_u
         server_uri: WebSocket server URI
         no_restore: Trueの場合、元のウィンドウに戻さない
         restore_delay: 元のウィンドウに戻すまでの待機時間（秒）
+        no_focus: Trueの場合、Unityをアクティブ化しない（バックグラウンド実行）
 
     Returns:
         dict: サーバーからの応答（success, result, error, timestamp）
     """
-    # 現在のウィンドウを保存
-    window_manager.save_current_window()
-
-    # Unityウィンドウを検索（PIDを使用）
-    unity_info = await get_unity_info(server_uri)
-    if unity_info:
-        title = unity_info.get("title")
-        pid = unity_info.get("pid")
-        window_manager.find_unity_window(title, pid)
+    # no_focusモードではウィンドウ操作をスキップ
+    if no_focus:
+        print("🔇 No-focus mode: skipping window activation")
     else:
-        window_manager.find_unity_window()
+        # 現在のウィンドウを保存
+        window_manager.save_current_window()
 
-    # Unityをアクティブ化
-    if window_manager.unity_title:
-        print(f"🪟 Activating Unity: {window_manager.unity_title}")
-        window_manager.activate_unity()
-        time.sleep(0.5)  # ウィンドウ切り替え待機
-    else:
-        print("⚠ Unity window not found, proceeding anyway")
+        # Unityウィンドウを検索（PIDを使用）
+        unity_info = await get_unity_info(server_uri)
+        if unity_info:
+            title = unity_info.get("title")
+            pid = unity_info.get("pid")
+            window_manager.find_unity_window(title, pid)
+        else:
+            window_manager.find_unity_window()
+
+        # Unityをアクティブ化
+        if window_manager.unity_title:
+            print(f"🪟 Activating Unity: {window_manager.unity_title}")
+            window_manager.activate_unity()
+            time.sleep(0.5)  # ウィンドウ切り替え待機
+        else:
+            print("⚠ Unity window not found, proceeding anyway")
 
     try:
         async with websockets.connect(server_uri) as websocket:
@@ -441,8 +447,10 @@ async def send_command(command: str, window_manager: WindowManagerBase, server_u
             response = json.loads(response_str)
             return response
     finally:
-        # 元のウィンドウに戻す
-        if not no_restore:
+        # no_focusモードではウィンドウ復元もスキップ
+        if no_focus:
+            pass  # 何もしない
+        elif not no_restore:
             time.sleep(restore_delay)
             print(f"🪟 Restoring original window")
             window_manager.restore_original()
@@ -546,6 +554,7 @@ Examples:
     parser.add_argument("--port", "-p", type=int, help=f"Server port (default: {DEFAULT_PORT})")
     parser.add_argument("--project", "-P", help="Unity project path (reads port from Library/ClaudeAgent/port.txt)")
     parser.add_argument("--no-restore", "-n", action="store_true", help="Don't restore original window after command")
+    parser.add_argument("--no-focus", "-f", action="store_true", help="Don't activate Unity window (background execution)")
     parser.add_argument("--restore-delay", "-d", type=float, default=0.3, help="Delay before restoring window (default: 0.3s)")
 
     args = parser.parse_args()
@@ -573,7 +582,8 @@ Examples:
         response = asyncio.run(send_command(
             args.command, window_manager, server_uri,
             no_restore=args.no_restore,
-            restore_delay=args.restore_delay
+            restore_delay=args.restore_delay,
+            no_focus=args.no_focus
         ))
         format_result(response)
 

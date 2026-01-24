@@ -97,7 +97,7 @@ Several operations support `position_space`, `rotation_space`, and `scale_space`
 
 Result messages show which space was used: `Created sphere: MySphere (position: world, scale: local)`
 
-## Supported Operations (86 total)
+## Supported Operations (87 total)
 
 > **Looking up operation details**: Use `Grep "### operation_name" File.md -A 25` to retrieve only the specific operation section instead of reading the entire file. This reduces token consumption.
 
@@ -155,7 +155,8 @@ Result messages show which space was used: `Created sphere: MySphere (position: 
 | `delete_asset` | [Delete asset](Asset.md#delete_asset) |
 | `get_asset` | [Get asset info](Asset.md#get_asset) |
 | `import_asset` | [Re-import asset](Asset.md#import_asset) |
-| `refresh_assets` | [Refresh AssetDatabase](Asset.md#refresh_assets) |
+| `refresh_assets` | [Refresh AssetDatabase (supports force option)](Asset.md#refresh_assets) |
+| `request_script_compilation` | [Request script compilation](Asset.md#request_script_compilation) |
 | `copy_asset` | [Copy asset](Asset.md#copy_asset) |
 | `import_package` | [Import .unitypackage file](Asset.md#import_package) |
 | `list_assets` | [List assets in folder](Asset.md#list_assets) |

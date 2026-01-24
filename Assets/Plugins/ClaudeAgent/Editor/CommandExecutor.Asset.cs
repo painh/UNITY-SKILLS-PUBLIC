@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.Compilation;
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace ClaudeAgent
             RegisterCommand("get_asset", GetAsset);
             RegisterCommand("import_asset", ImportAsset);
             RegisterCommand("refresh_assets", RefreshAssets);
+            RegisterCommand("request_script_compilation", RequestScriptCompilation);
             RegisterCommand("copy_asset", CopyAsset);
             RegisterCommand("import_package", ImportPackage);
             RegisterCommand("list_assets", ListAssets);
@@ -210,15 +212,53 @@ namespace ClaudeAgent
         {
             try
             {
-                AssetDatabase.Refresh();
+                // force 파라미터가 true이면 강제 동기 리프레시
+                bool force = p?.force ?? false;
 
-                string result = "AssetDatabase refreshed successfully";
+                if (force)
+                {
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                }
+                else
+                {
+                    AssetDatabase.Refresh();
+                }
+
+                string result = force
+                    ? "AssetDatabase force refreshed successfully"
+                    : "AssetDatabase refreshed successfully";
                 ConsoleLog($"[CommandExecutor] {result}");
                 return (true, result);
             }
             catch (Exception e)
             {
                 string error = $"Error refreshing assets: {e.Message}";
+                ConsoleLogError($"[CommandExecutor] {error}");
+                return (false, error);
+            }
+        }
+
+        /// <summary>
+        /// Requests script compilation (Unity 2019.3+)
+        /// This can trigger domain reload even when Unity is not focused
+        /// </summary>
+        private (bool, string) RequestScriptCompilation(CommandParams p)
+        {
+            try
+            {
+                // 먼저 강제 리프레시로 변경된 파일 감지
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+
+                // 스크립트 컴파일 요청
+                CompilationPipeline.RequestScriptCompilation();
+
+                string result = "Script compilation requested. Domain reload will occur if scripts changed.";
+                ConsoleLog($"[CommandExecutor] {result}");
+                return (true, result);
+            }
+            catch (Exception e)
+            {
+                string error = $"Error requesting script compilation: {e.Message}";
                 ConsoleLogError($"[CommandExecutor] {error}");
                 return (false, error);
             }

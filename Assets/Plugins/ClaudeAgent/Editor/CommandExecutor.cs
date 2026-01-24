@@ -982,6 +982,7 @@ namespace ClaudeAgent
             public string folder_path;         // Folder path (for list_assets)
             public string filter;              // Search filter (for list_assets, e.g., "t:Prefab")
             public bool recursive;             // Search recursively (for list_assets)
+            public bool force;                 // Force synchronous operation (for refresh_assets)
 
             // Parameters for Light/Camera operations
             public float intensity;            // Light intensity

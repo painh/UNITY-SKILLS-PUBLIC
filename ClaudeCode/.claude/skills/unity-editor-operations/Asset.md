@@ -120,7 +120,8 @@ Returns a success message with the imported asset path.
 
 Refreshes the AssetDatabase to detect external file changes.
 
-**Parameters:** None
+**Parameters:**
+- `force` (optional): If true, uses `ImportAssetOptions.ForceUpdate | ForceSynchronousImport` for immediate refresh even when Unity is not focused (default: false)
 
 **Example:**
 ```json
@@ -130,13 +131,45 @@ Refreshes the AssetDatabase to detect external file changes.
 }
 ```
 
+**Force refresh example (recommended for background operations):**
+```json
+{
+  "operation": "refresh_assets",
+  "params": {"force": true}
+}
+```
+
 **Response Format:**
 Returns a success message indicating AssetDatabase was refreshed.
 
 **Note:**
 - Scans the entire project for file changes
-- Uses `AssetDatabase.Refresh()`
+- Uses `AssetDatabase.Refresh()` (or with ForceUpdate flags when force=true)
 - Useful after batch file operations
+- Use `force: true` when Unity is in background and you need immediate refresh
+
+### request_script_compilation
+
+Requests Unity to compile scripts. Useful when scripts are modified externally and Unity is in background.
+
+**Parameters:** None
+
+**Example:**
+```json
+{
+  "operation": "request_script_compilation",
+  "params": {}
+}
+```
+
+**Response Format:**
+Returns a success message indicating script compilation was requested.
+
+**Note:**
+- Calls `AssetDatabase.Refresh()` with ForceUpdate first to detect changes
+- Then calls `CompilationPipeline.RequestScriptCompilation()` (Unity 2019.3+)
+- Domain reload will occur if scripts changed
+- Useful for triggering compilation without needing to focus Unity window
 
 ### copy_asset
 
