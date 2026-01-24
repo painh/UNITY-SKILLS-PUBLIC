@@ -31,13 +31,18 @@ Claude Code (receives result)
 ### 1. Open Unity Command Server
 In Unity Editor: `Tools > ClaudeAgent > Unity Command Server`
 
-### 2. Send Command
+### 2. Send Command (use --no-focus first!)
 ```bash
+# Always try --no-focus mode first (background execution)
+python .claude/skills/unity-editor-operations/send_message.py --no-focus '{"operation":"create_primitive","params":{"type":"sphere","name":"MySphere","color":"red"}}'
+
+# If it fails, retry without --no-focus (focus mode)
 python .claude/skills/unity-editor-operations/send_message.py '{"operation":"create_primitive","params":{"type":"sphere","name":"MySphere","color":"red"}}'
 ```
 
 ### 3. Check Result
 ```
+🔇 No-focus mode: skipping window activation
 ✓ Connected to ws://127.0.0.1:8766/
 📤 Sending: {"operation":"create_primitive",...}
 ⏳ Waiting for response (timeout: 10s)...
@@ -46,19 +51,39 @@ python .claude/skills/unity-editor-operations/send_message.py '{"operation":"cre
    Time: 2025-11-25 18:00:00
 ```
 
+**Note:** Report to user which mode was used (no-focus or focus mode).
+
 ## send_message.py Usage
 
 Located at: `.claude/skills/unity-editor-operations/send_message.py`
 
 ```bash
-python send_message.py '<json_command>'
+python send_message.py --no-focus '<json_command>'
 ```
+
+**Important: Use `--no-focus` mode first!**
+- Always try `--no-focus` mode first (background execution without window activation)
+- If it fails, retry with focus mode (without `--no-focus` flag)
+- Report to user which mode was used
+
+**Execution Mode Strategy:**
+1. First attempt: `python send_message.py --no-focus '<command>'`
+2. If failed: Retry with `python send_message.py '<command>'` (focus mode)
+3. Report: Tell user whether no-focus or focus mode was used
 
 **Features:**
 - WebSocket connection to Unity Command Server
 - 10 second timeout
 - JSON result parsing and display
 - Exit code: 0 (success) / 1 (failure)
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--no-focus`, `-f` | Background execution (no window activation) - **preferred** |
+| `--port`, `-p` | Specify server port |
+| `--project`, `-P` | Read port from Unity project path |
+| `--no-restore`, `-n` | Don't restore original window after command |
 
 **Response Format:**
 ```json
@@ -364,6 +389,28 @@ When a command fails, remaining commands are cancelled:
 
 ## Best Practices
 
+### Execution Mode: No-Focus First
+
+**Always use `--no-focus` mode first** to avoid disrupting user's workflow:
+
+1. **First attempt**: Use `--no-focus` flag for background execution
+2. **On failure**: Retry without the flag (focus mode activates Unity window)
+3. **Report**: Always tell the user which mode was used
+
+```bash
+# Step 1: Try no-focus mode
+python send_message.py --no-focus '{"operation":"..."}'
+
+# Step 2: If failed, retry with focus mode
+python send_message.py '{"operation":"..."}'
+```
+
+**Why this matters:**
+- No-focus mode doesn't steal window focus from user
+- Most commands work fine in background
+- Focus mode is only needed when Unity requires foreground state
+- Users appreciate not having their workflow interrupted
+
 ### Script Generation: Local File Creation
 
 **For C# scripts, create files locally using Claude Code's Write tool instead of WebSocket commands.**
@@ -425,21 +472,26 @@ python send_message.py '{"operation":"get_scene_hierarchy","params":{}}'
 
 ## Examples
 
+**Always use `--no-focus` mode first. Retry without it only if the command fails.**
+
 ```bash
-# Create object
-python send_message.py '{"operation":"create_primitive","params":{"type":"sphere","name":"Ball","color":"red","position":[0,1,0]}}'
+# Create object (no-focus mode - preferred)
+python send_message.py --no-focus '{"operation":"create_primitive","params":{"type":"sphere","name":"Ball","color":"red","position":[0,1,0]}}'
 
-# Query scene
-python send_message.py '{"operation":"get_scene_hierarchy","params":{"max_depth":3}}'
+# Query scene (no-focus mode)
+python send_message.py --no-focus '{"operation":"get_scene_hierarchy","params":{"max_depth":3}}'
 
-# Modify object
-python send_message.py '{"operation":"transform","params":{"path":"Ball","position":[5,0,0],"rotation":[0,45,0]}}'
+# Modify object (no-focus mode)
+python send_message.py --no-focus '{"operation":"transform","params":{"path":"Ball","position":[5,0,0],"rotation":[0,45,0]}}'
 
-# Batch operations (max 20 commands)
-python send_message.py '{"operation":"batch","params":{"commands":[
+# Batch operations (no-focus mode, max 20 commands)
+python send_message.py --no-focus '{"operation":"batch","params":{"commands":[
   {"operation":"create_primitive","params":{"type":"cube","name":"Floor","scale":[10,0.1,10]}},
   {"operation":"create_primitive","params":{"type":"sphere","name":"Ball","color":"red","position":[0,1,0]}}
 ]}}'
+
+# If no-focus mode fails, retry with focus mode:
+python send_message.py '{"operation":"create_primitive","params":{"type":"sphere","name":"Ball"}}'
 ```
 
 ## Server Information
