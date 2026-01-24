@@ -57,6 +57,19 @@ pip install websockets
 python send_message.py '{"operation":"get_scene_hierarchy","params":{}}'
 ```
 
+### 백그라운드 실행 (Unity 포커스 없이)
+
+```bash
+# --no-focus 옵션으로 Unity 포커스 전환 없이 명령 실행
+python send_message.py --no-focus '{"operation":"get_scene_hierarchy","params":{}}'
+
+# 스크립트 변경 후 강제 컴파일 (백그라운드에서도 동작)
+python send_message.py --no-focus '{"operation":"request_script_compilation","params":{}}'
+
+# 에셋 변경 후 강제 리프레시
+python send_message.py --no-focus '{"operation":"refresh_assets","params":{"force":true}}'
+```
+
 ## 여러 Unity 인스턴스 지원
 
 Command Server는 **동적 포트 할당**을 지원합니다:
@@ -117,9 +130,21 @@ RegisterMyFeatureCommands();
 
 ## 지원 기능
 
-GameObject, Transform, Component, Material, Scene, Prefab, Light, Camera, UI, Animator, Terrain, ProBuilder, Screenshot, **Runtime 코드 실행** 등 64개의 Unity Editor 조작 지원.
+GameObject, Transform, Component, Material, Scene, Prefab, Light, Camera, UI, Animator, Terrain, ProBuilder, Screenshot, **Runtime 코드 실행**, Layer, Physics, Input, Localization, **URP** 등 **87개**의 Unity Editor 조작 지원.
 
-자세한 내용은 [원본 저장소](https://github.com/manahiyo831/UNITY-SKILLS-PUBLIC)를 참고하세요.
+### 주요 기능 카테고리
+
+| 카테고리 | 주요 명령어 |
+|---------|------------|
+| GameObject | `create_primitive`, `delete_gameobject`, `find_gameobject` |
+| Transform | `transform`, `set_parent`, `look_at` |
+| Component | `add_component`, `set_component_property` |
+| Material | `set_material`, `create_material` |
+| Scene | `save_scene`, `load_scene`, `get_scene_hierarchy` |
+| Asset | `refresh_assets`, `request_script_compilation` |
+| URP | `add_renderer_feature`, `get_renderer_features` |
+
+자세한 내용은 [스킬 문서](ClaudeCode/.claude/skills/unity-editor-operations/SKILL.md)를 참고하세요.
 
 ## 라이선스
 
