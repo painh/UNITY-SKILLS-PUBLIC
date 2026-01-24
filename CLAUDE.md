@@ -68,6 +68,7 @@ scripts/                               # 빌드 스크립트
 | Input | Input.md | simulate_key, simulate_mouse |
 | Screenshot | Screenshot.md | take_screenshot |
 | Debugging | Debugging.md | get_logs |
+| URP | URP.md | add_renderer_feature, get_renderer_features |
 
 ## Feature Permissions
 

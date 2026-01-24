@@ -17,7 +17,7 @@ namespace ClaudeAgent
     /// </summary>
     public static class VersionChecker
     {
-        public const string CurrentVersion = "0.0.20";
+        public const string CurrentVersion = "0.0.21";
         private const string GitHubOwner = "painh";
         private const string GitHubRepo = "UNITY-SKILLS-PUBLIC";
         private const string GitHubApiUrl = "https://api.github.com/repos/{0}/{1}/releases/latest";
@@ -751,14 +751,40 @@ namespace ClaudeAgent
         {
             EditorGUILayout.Space(10);
 
-            // Status display
+            // Status display with toggle button
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Status:", GUILayout.Width(50));
 
             var statusStyle = new GUIStyle(EditorStyles.boldLabel);
             bool isRunning = CommandServerAutoStart.IsRunning;
             statusStyle.normal.textColor = isRunning ? Color.green : Color.red;
-            EditorGUILayout.LabelField(isRunning ? "Running" : "Stopped", statusStyle);
+            EditorGUILayout.LabelField(isRunning ? "Running" : "Stopped", statusStyle, GUILayout.Width(60));
+
+            GUILayout.FlexibleSpace();
+
+            // Server toggle button
+            var toggleButtonStyle = new GUIStyle(GUI.skin.button);
+            if (isRunning)
+            {
+                toggleButtonStyle.normal.textColor = new Color(0.8f, 0.2f, 0.2f);
+            }
+            else
+            {
+                toggleButtonStyle.normal.textColor = new Color(0.2f, 0.6f, 0.2f);
+            }
+
+            if (GUILayout.Button(isRunning ? "Stop Server" : "Start Server", toggleButtonStyle, GUILayout.Width(90)))
+            {
+                if (isRunning)
+                {
+                    CommandServerAutoStart.StopServer();
+                }
+                else
+                {
+                    CommandServerAutoStart.StartServer();
+                }
+                Repaint();
+            }
             EditorGUILayout.EndHorizontal();
 
             // Port display with settings toggle

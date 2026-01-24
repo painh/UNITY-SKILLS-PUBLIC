@@ -55,6 +55,7 @@ namespace ClaudeAgent
             RegisterPhysicsCommands();
             RegisterInputCommands();
             RegisterLocalizationCommands();
+            RegisterURPCommands();
         }
 
         /// <summary>

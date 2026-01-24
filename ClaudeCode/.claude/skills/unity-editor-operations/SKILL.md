@@ -97,7 +97,7 @@ Several operations support `position_space`, `rotation_space`, and `scale_space`
 
 Result messages show which space was used: `Created sphere: MySphere (position: world, scale: local)`
 
-## Supported Operations (82 total)
+## Supported Operations (86 total)
 
 > **Looking up operation details**: Use `Grep "### operation_name" File.md -A 25` to retrieve only the specific operation section instead of reading the entire file. This reduces token consumption.
 
@@ -275,6 +275,14 @@ Result messages show which space was used: `Created sphere: MySphere (position: 
 | `add_string_table_entry` | [Add single entry to table](Localization.md#add_string_table_entry) |
 | `add_string_table_entries` | [Add multiple entries to table](Localization.md#add_string_table_entries) |
 | `import_string_table_csv` | [Import entries from CSV](Localization.md#import_string_table_csv) |
+
+### URP Operations (Requires URP Package)
+| Operation | Description |
+|-----------|-------------|
+| `add_renderer_feature` | [Add ScriptableRendererFeature to renderer](URP.md#add_renderer_feature) |
+| `remove_renderer_feature` | [Remove renderer feature](URP.md#remove_renderer_feature) |
+| `get_renderer_features` | [List renderer features](URP.md#get_renderer_features) |
+| `set_renderer_feature_property` | [Set feature property](URP.md#set_renderer_feature_property) |
 
 ## Batch Operations (Meta-Operation)
 
